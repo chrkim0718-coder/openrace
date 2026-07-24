@@ -1,19 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CarState, KeysPressed } from '@/types/game';
 import type { BuildingFeature, RoadSegment } from '@/utils/buildings';
-import { pointInPolygon, distToNearestRoad } from '@/utils/buildings';
+import {
+  pointInPolygon,
+  distToNearestRoad,
+  isPointInsideBuilding,
+  findSafeRoadPosition,
+} from '@/utils/buildings';
 
-const MAX_SPEED = 220; // km/h
-const TURBO_SPEED = 340; // km/h with boost
-const MIN_SPEED = -30; // km/h reverse
-const ACCEL = 45; // km/h per second
-const TURBO_ACCEL = 90; // km/h per second when boosting
-const BRAKE = 120;
-const FRICTION = 18;
-const OFF_ROAD_FRICTION = 60;
-const OFF_ROAD_MAX_SPEED = 40; // km/h off-road cap
-const STEER_RATE = 95; // degrees per second at full steer
-const STEER_RETURN = 6; // how fast wheel returns to center
+const MAX_SPEED = 420; // km/h (Uncapped high speed!)
+const TURBO_SPEED = 650; // km/h boost mode!
+const MIN_SPEED = -60; // km/h reverse
+const ACCEL = 120; // km/h per second
+const TURBO_ACCEL = 260; // km/h per second when boosting
+const BRAKE = 180;
+const FRICTION = 12;
+const OFF_ROAD_FRICTION = 10;
+const OFF_ROAD_MAX_SPEED = 350; // km/h off-road max speed
+const STEER_RATE = 135; // degrees per second at full steer
+const STEER_RETURN = 8; // how fast wheel returns to center
 
 export interface CollisionData {
   buildings: BuildingFeature[];
@@ -155,6 +160,20 @@ export function useCarPhysics(
             const roadDist = distToNearestRoad(nextLat, nextLng, coll.roads);
             if (roadDist > 5) {
               offRoad = true;
+            }
+          }
+        } else if (coll && Math.abs(speed) <= 0.5) {
+          // If stationary and stuck inside building, push to nearest road
+          if (isPointInsideBuilding(prev.lat, prev.lng, coll.buildings)) {
+            const safePos = findSafeRoadPosition(
+              prev.lat,
+              prev.lng,
+              coll.buildings,
+              coll.roads,
+            );
+            if (safePos && (safePos.lat !== prev.lat || safePos.lng !== prev.lng)) {
+              finalLat = safePos.lat;
+              finalLng = safePos.lng;
             }
           }
         }

@@ -106,6 +106,24 @@ export default function SearchPanel({ onTeleport, currentLabel }: Props) {
           </div>
         )}
 
+        {/* Quick location presets */}
+        <div className="flex items-center gap-1.5 px-3 py-2 border-t border-white/10 overflow-x-auto scrollbar-none">
+          {[
+            { name: '🏙️ 서울', lat: 37.5665, lng: 126.978 },
+            { name: '🏔️ 남산', lat: 37.5512, lng: 126.9882 },
+            { name: '🌋 한라산', lat: 33.3617, lng: 126.5332 },
+            { name: '🗻 후지산', lat: 35.3606, lng: 138.7274 },
+          ].map((preset, idx) => (
+            <button
+              key={idx}
+              onClick={() => onTeleport(preset.lat, preset.lng, preset.name)}
+              className="px-2 py-1 rounded-lg bg-white/5 hover:bg-cyan-500/20 hover:border-cyan-500/40 border border-white/10 text-[11px] text-slate-300 hover:text-cyan-300 transition-all shrink-0 select-none"
+            >
+              {preset.name}
+            </button>
+          ))}
+        </div>
+
         <div className="flex items-center gap-1.5 px-3 py-2 border-t border-white/10 bg-slate-950/40">
           <Navigation className="h-3 w-3 text-slate-500" />
           <span className="text-[11px] text-slate-400 truncate">

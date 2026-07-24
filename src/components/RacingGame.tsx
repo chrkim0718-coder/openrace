@@ -5,7 +5,12 @@ import { useCarPhysics } from '@/hooks/useCarPhysics';
 import type { CollisionData } from '@/hooks/useCarPhysics';
 import SearchPanel from '@/components/SearchPanel';
 import HUD from '@/components/HUD';
-import { fetchAreaData, getCachedData } from '@/utils/buildings';
+import {
+  fetchAreaData,
+  getCachedData,
+  isPointInsideBuilding,
+  findSafeRoadPosition,
+} from '@/utils/buildings';
 import type { WeatherMode, KeysPressed } from '@/types/game';
 
 const INITIAL = { lat: 37.5665, lng: 126.978, heading: 0 }; // Seoul
@@ -92,39 +97,76 @@ export default function RacingGame() {
     map.on('load', async () => {
       setMapLoading(false);
 
+      // Add 3D Terrain DEM source & enable 3D terrain elevation mesh
+      if (!map.getSource('terrain-dem')) {
+        map.addSource('terrain-dem', {
+          type: 'raster-dem',
+          tiles: [
+            'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
+          ],
+          encoding: 'terrarium',
+          tileSize: 256,
+          maxzoom: 15,
+        });
+      }
+
+      try {
+        map.setTerrain({
+          source: 'terrain-dem',
+          exaggeration: 3.8,
+        });
+      } catch (err) {
+        console.warn('3D Terrain setTerrain error:', err);
+      }
+
+      // Add 3D hillshading layer for realistic mountain & slope shadows
+      if (!map.getLayer('hillshade')) {
+        map.addLayer(
+          {
+            id: 'hillshade',
+            type: 'hillshade',
+            source: 'terrain-dem',
+            paint: {
+              'hillshade-exaggeration': 0.8,
+              'hillshade-shadow-color': '#090d16',
+              'hillshade-highlight-color': '#ffffff',
+            },
+          },
+          'osm-tiles',
+        );
+      }
+
+      // Initialize GeoJSON source & 3D buildings layer unconditionally
+      if (!map.getSource('buildings')) {
+        map.addSource('buildings', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: [] },
+        });
+      }
+      if (!map.getLayer('3d-buildings')) {
+        map.addLayer({
+          id: '3d-buildings',
+          source: 'buildings',
+          type: 'fill-extrusion',
+          paint: {
+            'fill-extrusion-color': ['coalesce', ['get', 'color'], '#cbd5e1'],
+            'fill-extrusion-height': ['get', 'height'],
+            'fill-extrusion-base': ['get', 'min_height'],
+            'fill-extrusion-opacity': 0.88,
+          },
+        });
+      }
+
       // Fetch 3D buildings + roads from Overpass API
       try {
         const { buildings, roads } = await fetchAreaData(INITIAL.lat, INITIAL.lng, 500);
         if (buildings.length > 0) {
-          const geojson = { type: 'FeatureCollection', features: buildings };
-          if (!map.getSource('buildings')) {
-            map.addSource('buildings', {
-              type: 'geojson',
-              data: geojson as any,
-            });
-            (map.getSource('buildings') as any)._data = geojson;
+          const src = map.getSource('buildings') as maplibregl.GeoJSONSource | undefined;
+          if (src) {
+            const geojson = { type: 'FeatureCollection', features: buildings };
+            src.setData(geojson as any);
+            (src as any)._data = geojson;
           }
-          map.addLayer({
-            id: '3d-buildings',
-            source: 'buildings',
-            type: 'fill-extrusion',
-            paint: {
-              'fill-extrusion-color': [
-                'interpolate',
-                ['linear'],
-                ['get', 'height'],
-                0, '#d4d4d8',
-                10, '#b0b0b8',
-                30, '#8a8a92',
-                60, '#6a6a72',
-                120, '#4a4a52',
-                250, '#2a2a32',
-              ],
-              'fill-extrusion-height': ['get', 'height'],
-              'fill-extrusion-base': ['get', 'min_height'],
-              'fill-extrusion-opacity': 0.85,
-            },
-          });
         }
         // Set initial collision data
         collisionRef.current = { buildings, roads };
@@ -226,10 +268,11 @@ export default function RacingGame() {
       });
     }
 
-    // camera follows car
+    // camera follows car with 3D pitch view
     map.jumpTo({
       center: [car.lng, car.lat],
       bearing: car.heading,
+      pitch: 62,
     });
   }, [car, ready]);
 
@@ -281,30 +324,60 @@ export default function RacingGame() {
           roads: cached.roads,
         };
 
+        if (!map.getSource('buildings')) {
+          map.addSource('buildings', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] },
+          });
+        }
+        if (!map.getLayer('3d-buildings')) {
+          map.addLayer({
+            id: '3d-buildings',
+            source: 'buildings',
+            type: 'fill-extrusion',
+            paint: {
+              'fill-extrusion-color': ['coalesce', ['get', 'color'], '#cbd5e1'],
+              'fill-extrusion-height': ['get', 'height'],
+              'fill-extrusion-base': ['get', 'min_height'],
+              'fill-extrusion-opacity': 0.88,
+            },
+          });
+        }
+
         // Merge buildings into the map source for display
         const src = map.getSource('buildings') as maplibregl.GeoJSONSource | undefined;
-        if (src && buildings.length > 0) {
-          const existing = (src as any)._data?.features || [];
-          const merged = [...existing, ...buildings];
-          const seen = new Set<string>();
-          const unique = merged.filter((b: any) => {
-            const coords = b.geometry.coordinates[0];
-            const key = `${coords[0][0].toFixed(5)},${coords[0][1].toFixed(5)}`;
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-          });
-          src.setData({
-            type: 'FeatureCollection',
-            features: unique,
-          } as any);
-          (src as any)._data = { type: 'FeatureCollection', features: unique };
+        const allBuildings = cached.buildings.length > 0 ? cached.buildings : buildings;
+        if (src && allBuildings.length > 0) {
+          const geojson = { type: 'FeatureCollection', features: allBuildings };
+          src.setData(geojson as any);
+          (src as any)._data = geojson;
+        }
+
+        // Check if current target position is inside a building and auto-relocate to nearby road
+        if (isPointInsideBuilding(lat, lng, cached.buildings)) {
+          const safePos = findSafeRoadPosition(
+            lat,
+            lng,
+            cached.buildings,
+            cached.roads,
+          );
+          if (safePos && (safePos.lat !== lat || safePos.lng !== lng)) {
+            setCar((c) => ({
+              ...c,
+              lat: safePos.lat,
+              lng: safePos.lng,
+              speed: 0,
+            }));
+            map.jumpTo({
+              center: [safePos.lng, safePos.lat],
+            });
+          }
         }
       } catch (e) {
         console.error('Failed to refresh buildings:', e);
       }
     },
-    [],
+    [setCar],
   );
 
   useEffect(() => {
