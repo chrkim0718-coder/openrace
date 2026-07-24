@@ -1,4 +1,4 @@
-import { Gauge, MapPin, Sparkles, Building2, Shield, Mountain, Tag, Camera } from 'lucide-react';
+import { Gauge, MapPin, Sparkles, Building2, Shield, Mountain, Tag, Camera, CloudSun, Volume2, VolumeX } from 'lucide-react';
 import type { CarState, WeatherMode } from '@/types/game';
 
 export type CameraMode = 'chase' | 'topdown' | 'sky' | 'bonnet';
@@ -32,12 +32,17 @@ interface Props {
   showLabels: boolean;
   terrainScale: number;
   cameraMode: CameraMode;
+  isLiveWeather: boolean;
+  isMuted: boolean;
+  liveWeatherDesc?: string;
   onWeatherChange: (w: WeatherMode) => void;
   onToggleBuildings: (show: boolean) => void;
   onToggleCollision: (enable: boolean) => void;
   onToggleLabels: (show: boolean) => void;
   onTerrainScaleChange: (scale: number) => void;
   onToggleCameraMode: (mode: CameraMode) => void;
+  onToggleLiveWeather: () => void;
+  onToggleMute: () => void;
   onReset: () => void;
 }
 
@@ -57,12 +62,17 @@ export default function HUD({
   showLabels,
   terrainScale,
   cameraMode,
+  isLiveWeather,
+  isMuted,
+  liveWeatherDesc,
   onWeatherChange,
   onToggleBuildings,
   onToggleCollision,
   onToggleLabels,
   onTerrainScaleChange,
   onToggleCameraMode,
+  onToggleLiveWeather,
+  onToggleMute,
   onReset,
 }: Props) {
   const speed = Math.abs(Math.round(car.speed));
@@ -73,36 +83,21 @@ export default function HUD({
       {/* Speedometer */}
       <div className="absolute bottom-4 left-4 z-50">
         <div className="rounded-2xl bg-slate-900/85 backdrop-blur-xl border border-white/10 shadow-2xl px-5 py-3 flex items-center gap-4">
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col">
             <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-bold text-white tabular-nums leading-none">
+              <span className="text-4xl font-black text-white tracking-tight drop-shadow">
                 {speed}
               </span>
-              <span className="text-xs text-slate-400">km/h</span>
+              <span className="text-xs font-semibold text-slate-400">km/h</span>
             </div>
-            <div className="mt-1 flex items-center gap-2">
-              <span
-                className={`text-xs font-bold px-1.5 py-0.5 rounded ${
-                  gear === 'D'
-                    ? 'bg-cyan-500/30 text-cyan-300'
-                    : 'bg-amber-500/30 text-amber-300'
-                }`}
-              >
+            <div className="flex items-center gap-2 mt-1">
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">
                 {gear}
               </span>
-              {/* speed bar */}
-              <div className="w-24 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+              <div className="w-20 h-1.5 bg-slate-800 rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full transition-all duration-150"
-                  style={{
-                    width: `${(speed / 340) * 100}%`,
-                    background:
-                      speed > 220
-                        ? 'linear-gradient(90deg,#f43f5e,#fb923c)'
-                        : speed > 160
-                          ? 'linear-gradient(90deg,#22d3ee,#f43f5e)'
-                          : 'linear-gradient(90deg,#22d3ee,#a3e635)',
-                  }}
+                  className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all duration-75"
+                  style={{ width: `${Math.min(100, (speed / 420) * 100)}%` }}
                 />
               </div>
             </div>
@@ -160,7 +155,20 @@ export default function HUD({
 
       {/* Weather + reset */}
       <div className="absolute top-4 right-4 z-50 flex flex-col gap-2 items-end">
-        <div className="rounded-2xl bg-slate-900/85 backdrop-blur-xl border border-white/10 shadow-2xl p-1.5 flex gap-1">
+        <div className="rounded-2xl bg-slate-900/85 backdrop-blur-xl border border-white/10 shadow-2xl p-1.5 flex gap-1 items-center">
+          <button
+            onClick={onToggleLiveWeather}
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 border ${
+              isLiveWeather
+                ? 'bg-amber-500/25 border-amber-400/50 text-amber-300 shadow-md shadow-amber-500/20 animate-pulse'
+                : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
+            }`}
+            title="실시간 날씨 API 연동 (온도 및 시간대 자동 연동)"
+          >
+            <CloudSun className="h-3.5 w-3.5" />
+            {isLiveWeather ? `실시간 ON ${liveWeatherDesc ? `(${liveWeatherDesc})` : ''}` : '실시간 날씨'}
+          </button>
+          <div className="w-[1px] h-4 bg-white/10 mx-0.5" />
           {WEATHERS.map((w) => (
             <button
               key={w.id}
@@ -203,6 +211,18 @@ export default function HUD({
           >
             <Mountain className="h-3.5 w-3.5 text-cyan-400" />
             지형 {TERRAIN_LEVELS.find((l) => Math.abs(l.value - terrainScale) < 0.1)?.label || `${terrainScale}x`}
+          </button>
+          <button
+            onClick={onToggleMute}
+            className={`rounded-xl backdrop-blur-xl border shadow-xl px-3 py-2 text-xs transition-all flex items-center gap-1.5 font-medium ${
+              !isMuted
+                ? 'bg-emerald-500/25 border-emerald-400/40 text-emerald-200 hover:bg-emerald-500/35'
+                : 'bg-slate-900/85 border-white/10 text-slate-400 hover:text-white hover:bg-white/5'
+            }`}
+            title="엔진 및 환경 사운드 효과 ON/OFF"
+          >
+            {!isMuted ? <Volume2 className="h-3.5 w-3.5 text-emerald-300" /> : <VolumeX className="h-3.5 w-3.5" />}
+            사운드 {!isMuted ? 'ON' : 'OFF'}
           </button>
           <button
             onClick={() => onToggleLabels(!showLabels)}

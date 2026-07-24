@@ -17,6 +17,20 @@ export interface KeysPressed {
 
 export type WeatherMode = 'day' | 'night' | 'rain' | 'snow';
 
+export type ThemeCategory = 'snow' | 'hairpin' | 'coastal' | 'night';
+
+export interface ScenicCourse {
+  id: string;
+  name: string;
+  location: string;
+  theme: ThemeCategory;
+  lat: number;
+  lng: number;
+  weather: WeatherMode;
+  terrainScale: number;
+  description: string;
+}
+
 export interface SearchResult {
   display_name: string;
   lat: string;

@@ -12,7 +12,10 @@ import {
   findSafeRoadPosition,
 } from '@/utils/buildings';
 import type { LandmarkPOI } from '@/utils/buildings';
-import type { WeatherMode, KeysPressed } from '@/types/game';
+import type { WeatherMode, KeysPressed, ScenicCourse } from '@/types/game';
+import { audioEngine } from '@/utils/audioEngine';
+import { fetchLiveWeather } from '@/utils/liveWeather';
+import { SCENIC_COURSES } from '@/data/scenicDrives';
 
 const INITIAL = { lat: 37.5665, lng: 126.978, heading: 0 }; // Seoul
 
@@ -42,6 +45,9 @@ export default function RacingGame() {
   const [showLabels, setShowLabels] = useState(true);
   const [terrainScale, setTerrainScale] = useState(1.0);
   const [cameraMode, setCameraMode] = useState<CameraMode>('chase');
+  const [isLiveWeather, setIsLiveWeather] = useState(false);
+  const [liveWeatherDesc, setLiveWeatherDesc] = useState<string>('');
+  const [isMuted, setIsMuted] = useState(true);
   const [locationLabel, setLocationLabel] = useState('서울');
   const [ready, setReady] = useState(false);
   const [mapLoading, setMapLoading] = useState(true);
@@ -630,6 +636,64 @@ export default function RacingGame() {
     [setCar, refreshBuildings],
   );
 
+  // Live weather fetch helper
+  const updateLiveWeather = useCallback(async (targetLat: number, targetLng: number) => {
+    const live = await fetchLiveWeather(targetLat, targetLng);
+    if (live) {
+      setWeather(live.weather);
+      setLiveWeatherDesc(live.description);
+    }
+  }, []);
+
+  const handleToggleLiveWeather = useCallback(() => {
+    setIsLiveWeather((prev) => {
+      const next = !prev;
+      if (next) {
+        updateLiveWeather(car.lat, car.lng);
+      } else {
+        setLiveWeatherDesc('');
+      }
+      return next;
+    });
+  }, [car.lat, car.lng, updateLiveWeather]);
+
+  // Audio Engine loop
+  useEffect(() => {
+    if (active && !isMuted) {
+      audioEngine.update(car.speed, car.turbo);
+    }
+  }, [car.speed, car.turbo, active, isMuted]);
+
+  useEffect(() => {
+    if (active && !isMuted) {
+      audioEngine.setWeather(weather);
+    }
+  }, [weather, active, isMuted]);
+
+  const handleToggleMute = useCallback(() => {
+    const muted = audioEngine.toggleMute();
+    setIsMuted(muted);
+  }, []);
+
+  // Course selection and Random Scenic generator
+  const handleSelectCourse = useCallback(
+    (course: ScenicCourse) => {
+      handleTeleport(course.lat, course.lng, `${course.name} (${course.location})`);
+      setWeather(course.weather);
+      setTerrainScale(course.terrainScale);
+      if (isLiveWeather) {
+        updateLiveWeather(course.lat, course.lng);
+      }
+    },
+    [handleTeleport, isLiveWeather, updateLiveWeather],
+  );
+
+  const handleRandomScenic = useCallback(() => {
+    const randomIndex = Math.floor(Math.random() * SCENIC_COURSES.length);
+    const course = SCENIC_COURSES[randomIndex];
+    handleSelectCourse(course);
+  }, [handleSelectCourse]);
+
   const handleReset = useCallback(() => {
     const currentLat = car.lat;
     const currentLng = car.lng;
@@ -815,7 +879,12 @@ export default function RacingGame() {
       {/* HUD */}
       {active && (
         <>
-          <SearchPanel onTeleport={handleTeleport} currentLabel={locationLabel} />
+          <SearchPanel
+            onTeleport={handleTeleport}
+            onSelectCourse={handleSelectCourse}
+            onRandomScenic={handleRandomScenic}
+            currentLabel={locationLabel}
+          />
           <HUD
             car={car}
             locationLabel={locationLabel}
@@ -825,12 +894,17 @@ export default function RacingGame() {
             showLabels={showLabels}
             terrainScale={terrainScale}
             cameraMode={cameraMode}
+            isLiveWeather={isLiveWeather}
+            isMuted={isMuted}
+            liveWeatherDesc={liveWeatherDesc}
             onWeatherChange={setWeather}
             onToggleBuildings={setShowBuildings}
             onToggleCollision={setEnableCollision}
             onToggleLabels={setShowLabels}
             onTerrainScaleChange={setTerrainScale}
             onToggleCameraMode={setCameraMode}
+            onToggleLiveWeather={handleToggleLiveWeather}
+            onToggleMute={handleToggleMute}
             onReset={handleReset}
           />
         </>
