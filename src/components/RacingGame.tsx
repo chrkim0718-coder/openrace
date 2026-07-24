@@ -36,8 +36,8 @@ export default function RacingGame() {
 
   const [active, setActive] = useState(false);
   const [weather, setWeather] = useState<WeatherMode>('day');
-  const [showBuildings, setShowBuildings] = useState(true);
-  const [enableCollision, setEnableCollision] = useState(true);
+  const [showBuildings, setShowBuildings] = useState(false);
+  const [enableCollision, setEnableCollision] = useState(false);
   const [terrainScale, setTerrainScale] = useState(1.9);
   const [locationLabel, setLocationLabel] = useState('서울');
   const [ready, setReady] = useState(false);
@@ -154,6 +154,9 @@ export default function RacingGame() {
           id: '3d-buildings',
           source: 'buildings',
           type: 'fill-extrusion',
+          layout: {
+            visibility: 'none',
+          },
           paint: {
             'fill-extrusion-color': ['coalesce', ['get', 'color'], '#cbd5e1'],
             'fill-extrusion-height': ['get', 'height'],
