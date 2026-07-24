@@ -26,8 +26,31 @@ interface CacheEntry {
   timestamp: number;
 }
 
+const LOCAL_STORAGE_KEY = 'openrace_cell_cache_v1';
+
 const cellCache = new Map<string, CacheEntry>();
 const CELL_SIZE = 0.008; // ~800m per cell
+
+// Load cached cell data from localStorage on startup
+try {
+  const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+  if (stored) {
+    const entries: Array<[string, CacheEntry]> = JSON.parse(stored);
+    entries.forEach(([k, v]) => cellCache.set(k, v));
+  }
+} catch {
+  // Ignore quota/parse error
+}
+
+function saveCacheToStorage() {
+  try {
+    // Store up to 60 recent map cells in browser storage
+    const entries = Array.from(cellCache.entries()).slice(-60);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(entries));
+  } catch {
+    // Storage quota exceeded fallback
+  }
+}
 
 function cellKey(lat: number, lng: number): string {
   const cLat = Math.floor(lat / CELL_SIZE);
@@ -453,6 +476,7 @@ export async function fetchAreaData(
     roads,
     timestamp: Date.now(),
   });
+  saveCacheToStorage();
 
   return { buildings, roads };
 }
