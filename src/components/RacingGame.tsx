@@ -45,7 +45,7 @@ export default function RacingGame() {
   const [enableCollision, setEnableCollision] = useState(false);
   const [showLabels, setShowLabels] = useState(true);
   const [terrainScale, setTerrainScale] = useState(1.0);
-  const [cameraMode, setCameraMode] = useState<CameraMode>('chase');
+  const [cameraMode, setCameraMode] = useState<CameraMode>('topdown');
   const [isLiveWeather, setIsLiveWeather] = useState(false);
   const [liveWeatherDesc, setLiveWeatherDesc] = useState<string>('');
   const [isMuted, setIsMuted] = useState(true);
@@ -539,7 +539,7 @@ export default function RacingGame() {
       const map = mapRef.current;
       if (!map) return;
 
-      setCameraMode('chase');
+      setCameraMode('topdown');
       setTerrainScale(1.0);
 
       setCar((c) => ({
@@ -617,7 +617,7 @@ export default function RacingGame() {
       setIsLiveWeather(false);
       setLiveWeatherDesc('');
       setWeather(course.weather);
-      setCameraMode('chase');
+      setCameraMode('topdown');
       setTerrainScale(1.0);
       handleTeleport(course.lat, course.lng, `${course.name} (${course.location})`);
     },
