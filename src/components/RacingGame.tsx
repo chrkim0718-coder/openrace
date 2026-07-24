@@ -576,7 +576,14 @@ export default function RacingGame() {
       lat: number,
       lng: number,
       label: string,
-      options?: { keepCameraMode?: boolean; keepTerrainScale?: boolean; cameraMode?: CameraMode; terrainScale?: number },
+      options?: {
+        keepCameraMode?: boolean;
+        keepTerrainScale?: boolean;
+        cameraMode?: CameraMode;
+        terrainScale?: number;
+        heading?: number;
+        speed?: number;
+      },
     ) => {
       const map = mapRef.current;
       if (!map) return;
@@ -596,11 +603,14 @@ export default function RacingGame() {
         turbo: false,
       };
 
+      const initHeading = options?.heading ?? 0;
+      const initSpeed = options?.speed ?? (isShowcaseMode ? showcaseSpeed : 0);
+
       setCar({
         lat,
         lng,
-        heading: 0,
-        speed: 0,
+        heading: initHeading,
+        speed: initSpeed,
         steerAngle: 0,
         turbo: false,
       });
@@ -608,12 +618,12 @@ export default function RacingGame() {
       cameraStateRef.current = {
         lat,
         lng,
-        bearing: 0,
+        bearing: initHeading,
       };
 
       map.jumpTo({
         center: [lng, lat],
-        bearing: 0,
+        bearing: initHeading,
         zoom: 17,
       });
 
@@ -629,7 +639,7 @@ export default function RacingGame() {
       collisionRef.current = null;
       refreshBuildings(lat, lng);
     },
-    [setCar, refreshBuildings, keysRef],
+    [setCar, refreshBuildings, keysRef, isShowcaseMode, showcaseSpeed],
   );
 
   // Live weather fetch helper
@@ -734,6 +744,8 @@ export default function RacingGame() {
       handleTeleport(scene.lat, scene.lng, scene.locationLabel, {
         keepCameraMode: true,
         keepTerrainScale: true,
+        heading: scene.heading ?? 0,
+        speed: showcaseSpeed,
       });
 
       const trackIdx = DRIVING_BGM_PLAYLIST.findIndex((t) => t.id === scene.bgmTrackId);
@@ -742,10 +754,11 @@ export default function RacingGame() {
         musicPlayer.play();
       }
     },
-    [handleTeleport],
+    [handleTeleport, showcaseSpeed],
   );
 
   const handleStartShowcase = useCallback(() => {
+    setActive(true); // Ensure game physics loop is active!
     setIsShowcaseMode(true);
     setShowcasePaused(false);
     setIsCinematicLetterbox(true);

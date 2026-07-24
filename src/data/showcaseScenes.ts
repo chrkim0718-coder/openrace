@@ -7,6 +7,7 @@ export interface ShowcaseScene {
   locationLabel: string;
   lat: number;
   lng: number;
+  heading?: number; // Road direction heading angle
   timeInMinutes: number; // 0..1439
   weather: WeatherMode;
   weatherIntensity: number; // 1..5
@@ -23,6 +24,7 @@ export const SHOWCASE_SCENES: ShowcaseScene[] = [
     locationLabel: '반포대교 (서울, 대한민국)',
     lat: 37.5115,
     lng: 126.995,
+    heading: 170,
     timeInMinutes: 1380, // 23:00 Night
     weather: 'rain',
     weatherIntensity: 3,
@@ -37,6 +39,7 @@ export const SHOWCASE_SCENES: ShowcaseScene[] = [
     locationLabel: '부산 해운대 해수욕장 (부산, 대한민국)',
     lat: 35.1587,
     lng: 129.1604,
+    heading: 75,
     timeInMinutes: 1110, // 18:30 Sunset
     weather: 'day',
     weatherIntensity: 1,
@@ -51,6 +54,7 @@ export const SHOWCASE_SCENES: ShowcaseScene[] = [
     locationLabel: '푸르카 패스 (알프스, 스위스)',
     lat: 46.5724,
     lng: 8.4144,
+    heading: 250,
     timeInMinutes: 720, // 12:00 Day
     weather: 'snow',
     weatherIntensity: 4,
@@ -65,6 +69,7 @@ export const SHOWCASE_SCENES: ShowcaseScene[] = [
     locationLabel: '남산서울타워 (서울, 대한민국)',
     lat: 37.5512,
     lng: 126.9882,
+    heading: 210,
     timeInMinutes: 1350, // 22:30 Night
     weather: 'day',
     weatherIntensity: 1,
@@ -79,6 +84,7 @@ export const SHOWCASE_SCENES: ShowcaseScene[] = [
     locationLabel: '일본 도쿄 수도고속도로 (C1 환상선)',
     lat: 35.6586,
     lng: 139.7454,
+    heading: 15,
     timeInMinutes: 1410, // 23:30 Midnight
     weather: 'night',
     weatherIntensity: 1,
@@ -93,6 +99,7 @@ export const SHOWCASE_SCENES: ShowcaseScene[] = [
     locationLabel: '니스 프롬나드 데 앙글레 (프랑스)',
     lat: 43.696,
     lng: 7.2656,
+    heading: 235,
     timeInMinutes: 1050, // 17:30 Golden Hour
     weather: 'day',
     weatherIntensity: 1,
@@ -107,6 +114,7 @@ export const SHOWCASE_SCENES: ShowcaseScene[] = [
     locationLabel: '홍콩 빅토리아 피크 (홍콩)',
     lat: 22.2759,
     lng: 114.1455,
+    heading: 95,
     timeInMinutes: 1380, // 23:00 Night
     weather: 'rain',
     weatherIntensity: 2,
@@ -121,6 +129,7 @@ export const SHOWCASE_SCENES: ShowcaseScene[] = [
     locationLabel: '대관령 (강원 평창, 대한민국)',
     lat: 37.6892,
     lng: 128.7562,
+    heading: 120,
     timeInMinutes: 390, // 06:30 Sunrise
     weather: 'day',
     weatherIntensity: 1,
