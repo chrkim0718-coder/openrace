@@ -390,8 +390,8 @@ export default function RacingGame() {
           (src as any)._data = geojson;
         }
 
-        // Check if current target position is inside a building and auto-relocate to nearby road
-        if (isPointInsideBuilding(lat, lng, cached.buildings)) {
+        // Check if current target position is inside a building and auto-relocate to nearby road if collision is enabled
+        if (enableCollision && isPointInsideBuilding(lat, lng, cached.buildings)) {
           const safePos = findSafeRoadPosition(
             lat,
             lng,
@@ -414,7 +414,7 @@ export default function RacingGame() {
         console.error('Failed to refresh buildings:', e);
       }
     },
-    [setCar],
+    [enableCollision, setCar],
   );
 
   useEffect(() => {
