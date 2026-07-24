@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Gauge, MapPin, Sparkles, Building2, Shield, Mountain, Tag, Camera, CloudSun, Volume2, VolumeX, Clock, Sliders } from 'lucide-react';
+import { Gauge, MapPin, Sparkles, Building2, Shield, Mountain, Tag, Camera, CloudSun, Volume2, VolumeX, Clock, Sliders, Film } from 'lucide-react';
 import type { CarState, WeatherMode } from '@/types/game';
 import { getTimeOfDayAtmosphere } from '@/utils/timeOfDay';
 
@@ -59,6 +59,7 @@ interface Props {
   onToggleMute: () => void;
   onTimeChange: (mins: number) => void;
   onToggleTimeAutoFlow: () => void;
+  onStartShowcase: () => void;
   onReset: () => void;
 }
 
@@ -95,6 +96,7 @@ export default function HUD({
   onToggleMute,
   onTimeChange,
   onToggleTimeAutoFlow,
+  onStartShowcase,
   onReset,
 }: Props) {
   const [timePickerOpen, setTimePickerOpen] = useState(false);
@@ -186,6 +188,16 @@ export default function HUD({
       {/* Top Right Controls & Weather Bar */}
       <div className="absolute top-4 right-4 z-50 flex flex-col gap-2 items-end">
         <div className="rounded-2xl bg-slate-900/85 backdrop-blur-xl border border-white/10 shadow-2xl p-1.5 flex gap-1.5 items-center">
+          {/* Showcase Auto Drive Mode Top Button */}
+          <button
+            onClick={onStartShowcase}
+            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-500/30 to-purple-600/30 hover:from-rose-500/40 hover:to-purple-600/40 border border-rose-400/50 text-rose-200 text-xs font-bold transition-all flex items-center gap-1.5 shadow-lg shadow-rose-950/40 animate-pulse"
+            title="알아서 멋진 3D 드라이브를 보여드립니다!"
+          >
+            <Film className="h-3.5 w-3.5 text-amber-300" />
+            <span>🎬 구경하기</span>
+          </button>
+          <div className="w-[1px] h-4 bg-white/10 mx-0.5" />
           {/* Time Picker Toggle Button */}
           <div className="relative">
             <button

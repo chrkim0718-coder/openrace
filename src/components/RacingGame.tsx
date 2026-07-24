@@ -18,6 +18,9 @@ import { audioEngine } from '@/utils/audioEngine';
 import { fetchLiveWeather } from '@/utils/liveWeather';
 import { SCENIC_COURSES } from '@/data/scenicDrives';
 import { getTimeOfDayAtmosphere } from '@/utils/timeOfDay';
+import { SHOWCASE_SCENES } from '@/data/showcaseScenes';
+import { musicPlayer, DRIVING_BGM_PLAYLIST } from '@/utils/musicPlayer';
+import { Film } from 'lucide-react';
 
 const INITIAL = { lat: 35.1587, lng: 129.1604, heading: 0 }; // Busan Haeundae Beach
 
@@ -684,6 +687,102 @@ export default function RacingGame() {
     handleSelectCourse(course);
   }, [handleSelectCourse]);
 
+  // Showcase Auto-Drive Mode Engine
+  const [isShowcaseMode, setIsShowcaseMode] = useState<boolean>(false);
+  const [showcaseIndex, setShowcaseIndex] = useState<number>(0);
+  const [showcaseTimer, setShowcaseTimer] = useState<number>(60);
+
+  const applyShowcaseScene = useCallback((idx: number) => {
+    const scene = SHOWCASE_SCENES[idx % SHOWCASE_SCENES.length];
+    setIsLiveWeather(false);
+    setLiveWeatherDesc('');
+    setTimeInMinutes(scene.timeInMinutes);
+    setWeather(scene.weather);
+    setWeatherIntensity(scene.weatherIntensity);
+    setCameraMode(scene.cameraMode);
+    setTerrainScale(scene.terrainScale);
+    handleTeleport(scene.lat, scene.lng, scene.locationLabel);
+
+    const trackIdx = DRIVING_BGM_PLAYLIST.findIndex((t) => t.id === scene.bgmTrackId);
+    if (trackIdx !== -1) {
+      (musicPlayer as any).currentTrackIndex = trackIdx;
+      musicPlayer.play();
+    }
+  }, [handleTeleport]);
+
+  const handleStartShowcase = useCallback(() => {
+    setIsShowcaseMode(true);
+    setShowcaseIndex(0);
+    setShowcaseTimer(60);
+    applyShowcaseScene(0);
+  }, [applyShowcaseScene]);
+
+  const handleNextShowcase = useCallback(() => {
+    setShowcaseIndex((prev) => {
+      const next = (prev + 1) % SHOWCASE_SCENES.length;
+      applyShowcaseScene(next);
+      return next;
+    });
+    setShowcaseTimer(60);
+  }, [applyShowcaseScene]);
+
+  // Showcase Auto Drive & Countdown Timer Loop
+  useEffect(() => {
+    if (!isShowcaseMode || !active) return;
+
+    // Simulate auto cruise driving with smooth sine curvature steering
+    const driveInterval = setInterval(() => {
+      keysRef.current.forward = true;
+      const now = Date.now() / 1000;
+      const steer = Math.sin(now * 0.7);
+      if (steer > 0.45) {
+        keysRef.current.right = true;
+        keysRef.current.left = false;
+      } else if (steer < -0.45) {
+        keysRef.current.left = true;
+        keysRef.current.right = false;
+      } else {
+        keysRef.current.left = false;
+        keysRef.current.right = false;
+      }
+    }, 100);
+
+    const timer = setInterval(() => {
+      setShowcaseTimer((prev) => {
+        if (prev <= 1) {
+          handleNextShowcase();
+          return 60;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      clearInterval(driveInterval);
+      clearInterval(timer);
+    };
+  }, [isShowcaseMode, active, handleNextShowcase, keysRef]);
+
+  // Manual keypress detection -> Exit Showcase mode
+  useEffect(() => {
+    if (!isShowcaseMode) return;
+    const handleUserControl = (e: KeyboardEvent) => {
+      if (
+        ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(
+          e.code,
+        )
+      ) {
+        setIsShowcaseMode(false);
+        keysRef.current.forward = false;
+        keysRef.current.backward = false;
+        keysRef.current.left = false;
+        keysRef.current.right = false;
+      }
+    };
+    window.addEventListener('keydown', handleUserControl);
+    return () => window.removeEventListener('keydown', handleUserControl);
+  }, [isShowcaseMode, keysRef]);
+
   const handleReset = useCallback(() => {
     const currentLat = car.lat;
     const currentLng = car.lng;
@@ -874,13 +973,14 @@ export default function RacingGame() {
         </div>
       )}
 
-      {/* HUD */}
+      {/* HUD & Showcase Banner */}
       {active && (
         <>
           <SearchPanel
             onTeleport={handleTeleport}
             onSelectCourse={handleSelectCourse}
             onRandomScenic={handleRandomScenic}
+            onStartShowcase={handleStartShowcase}
             currentLabel={locationLabel}
           />
           <HUD
@@ -909,10 +1009,57 @@ export default function RacingGame() {
             onToggleCameraMode={setCameraMode}
             onToggleLiveWeather={handleToggleLiveWeather}
             onToggleMute={handleToggleMute}
+            onStartShowcase={handleStartShowcase}
             onReset={handleReset}
           />
           <RadioPlayer />
         </>
+      )}
+
+      {/* Showcase Mode Banner */}
+      {isShowcaseMode && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center gap-1.5 animate-fade-in pointer-events-auto max-w-[calc(100vw-2rem)]">
+          <div className="rounded-2xl bg-gradient-to-r from-purple-900/90 via-slate-900/95 to-indigo-900/90 backdrop-blur-2xl border-2 border-amber-400/50 shadow-2xl px-5 py-2.5 flex items-center gap-4">
+            <div className="flex items-center gap-2.5">
+              <Film className="h-5 w-5 text-amber-400 animate-pulse shrink-0" />
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-black text-amber-300 tracking-wider uppercase">
+                    🎬 구경 모드 진행 중
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/30 font-bold">
+                    다음 장소 {showcaseTimer}초 후 ➔
+                  </span>
+                </div>
+                <span className="text-xs sm:text-sm font-bold text-white tracking-wide truncate max-w-[200px] sm:max-w-xs">
+                  {SHOWCASE_SCENES[showcaseIndex]?.title}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 border-l border-white/15 pl-3">
+              <button
+                onClick={handleNextShowcase}
+                className="px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 text-xs font-bold transition-all flex items-center gap-1 shadow-md active:scale-95 shrink-0"
+              >
+                ⏭️ 다음 장소
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsShowcaseMode(false);
+                  keysRef.current.forward = false;
+                }}
+                className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-slate-200 text-xs font-bold transition-all flex items-center gap-1 shadow-md active:scale-95 shrink-0"
+              >
+                🛑 직접 운전하기
+              </button>
+            </div>
+          </div>
+          <p className="text-[10px] sm:text-[11px] font-semibold text-amber-200/90 bg-slate-950/80 px-3 py-0.5 rounded-full border border-amber-400/20 drop-shadow text-center">
+            💡 아무 키(W,A,S,D)나 조이스틱을 터치하면 언제든 직접 운전하실 수 있습니다.
+          </p>
+        </div>
       )}
 
       {/* Mobile touch controls */}
