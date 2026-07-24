@@ -38,6 +38,7 @@ export default function RacingGame() {
   const [weather, setWeather] = useState<WeatherMode>('day');
   const [showBuildings, setShowBuildings] = useState(true);
   const [enableCollision, setEnableCollision] = useState(true);
+  const [terrainScale, setTerrainScale] = useState(1.9);
   const [locationLabel, setLocationLabel] = useState('서울');
   const [ready, setReady] = useState(false);
   const [mapLoading, setMapLoading] = useState(true);
@@ -307,6 +308,24 @@ export default function RacingGame() {
       );
     }
   }, [showBuildings, ready]);
+
+  // dynamic 3d terrain scale exaggeration update
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    try {
+      if (terrainScale === 0) {
+        map.setTerrain(null);
+      } else {
+        map.setTerrain({
+          source: 'terrain-dem',
+          exaggeration: terrainScale,
+        });
+      }
+    } catch (err) {
+      console.warn('Dynamic terrain exaggeration error:', err);
+    }
+  }, [terrainScale, ready]);
 
   // Collision flash visual feedback
   useEffect(() => {
@@ -636,9 +655,11 @@ export default function RacingGame() {
             weather={weather}
             showBuildings={showBuildings}
             enableCollision={enableCollision}
+            terrainScale={terrainScale}
             onWeatherChange={setWeather}
             onToggleBuildings={setShowBuildings}
             onToggleCollision={setEnableCollision}
+            onTerrainScaleChange={setTerrainScale}
             onReset={handleReset}
           />
         </>

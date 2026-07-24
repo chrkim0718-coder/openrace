@@ -1,5 +1,13 @@
-import { Gauge, MapPin, Sparkles, Building2, Shield } from 'lucide-react';
+import { Gauge, MapPin, Sparkles, Building2, Shield, Mountain } from 'lucide-react';
 import type { CarState, WeatherMode } from '@/types/game';
+
+export const TERRAIN_LEVELS = [
+  { value: 0, label: '0x (평지)' },
+  { value: 1.0, label: '1x (실제)' },
+  { value: 1.9, label: '1.9x (표준)' },
+  { value: 3.5, label: '3.5x (높음)' },
+  { value: 5.0, label: '5x (극대)' },
+];
 
 interface Props {
   car: CarState;
@@ -7,9 +15,11 @@ interface Props {
   weather: WeatherMode;
   showBuildings: boolean;
   enableCollision: boolean;
+  terrainScale: number;
   onWeatherChange: (w: WeatherMode) => void;
   onToggleBuildings: (show: boolean) => void;
   onToggleCollision: (enable: boolean) => void;
+  onTerrainScaleChange: (scale: number) => void;
   onReset: () => void;
 }
 
@@ -26,9 +36,11 @@ export default function HUD({
   weather,
   showBuildings,
   enableCollision,
+  terrainScale,
   onWeatherChange,
   onToggleBuildings,
   onToggleCollision,
+  onTerrainScaleChange,
   onReset,
 }: Props) {
   const speed = Math.abs(Math.round(car.speed));
@@ -143,6 +155,21 @@ export default function HUD({
           ))}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              const currIdx = TERRAIN_LEVELS.findIndex(
+                (l) => Math.abs(l.value - terrainScale) < 0.1,
+              );
+              const nextIdx =
+                currIdx === -1 ? 2 : (currIdx + 1) % TERRAIN_LEVELS.length;
+              onTerrainScaleChange(TERRAIN_LEVELS[nextIdx].value);
+            }}
+            className="rounded-xl bg-slate-900/85 backdrop-blur-xl border border-white/10 shadow-xl px-3 py-2 text-xs text-cyan-200 hover:text-white hover:bg-white/5 transition-all flex items-center gap-1.5 font-medium select-none"
+            title="클릭 시 3D 지형 고도 배율 5단계 변경 (0x ~ 5x)"
+          >
+            <Mountain className="h-3.5 w-3.5 text-cyan-400" />
+            지형 {TERRAIN_LEVELS.find((l) => Math.abs(l.value - terrainScale) < 0.1)?.label || `${terrainScale}x`}
+          </button>
           <button
             onClick={() => onToggleBuildings(!showBuildings)}
             className={`rounded-xl backdrop-blur-xl border shadow-xl px-3 py-2 text-xs transition-all flex items-center gap-1.5 font-medium ${
