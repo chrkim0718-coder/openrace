@@ -1,11 +1,13 @@
-import { Gauge, MapPin, Sparkles } from 'lucide-react';
+import { Gauge, MapPin, Sparkles, Building2 } from 'lucide-react';
 import type { CarState, WeatherMode } from '@/types/game';
 
 interface Props {
   car: CarState;
   locationLabel: string;
   weather: WeatherMode;
+  showBuildings: boolean;
   onWeatherChange: (w: WeatherMode) => void;
+  onToggleBuildings: (show: boolean) => void;
   onReset: () => void;
 }
 
@@ -20,7 +22,9 @@ export default function HUD({
   car,
   locationLabel,
   weather,
+  showBuildings,
   onWeatherChange,
+  onToggleBuildings,
   onReset,
 }: Props) {
   const speed = Math.abs(Math.round(car.speed));
@@ -134,13 +138,26 @@ export default function HUD({
             </button>
           ))}
         </div>
-        <button
-          onClick={onReset}
-          className="rounded-xl bg-slate-900/85 backdrop-blur-xl border border-white/10 shadow-xl px-3 py-2 text-xs text-slate-300 hover:text-white hover:bg-white/5 transition-all flex items-center gap-1.5"
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          리셋
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onToggleBuildings(!showBuildings)}
+            className={`rounded-xl backdrop-blur-xl border shadow-xl px-3 py-2 text-xs transition-all flex items-center gap-1.5 font-medium ${
+              showBuildings
+                ? 'bg-cyan-500/25 border-cyan-400/40 text-cyan-200 hover:bg-cyan-500/35'
+                : 'bg-slate-900/85 border-white/10 text-slate-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Building2 className="h-3.5 w-3.5" />
+            3D 건물 {showBuildings ? 'ON' : 'OFF'}
+          </button>
+          <button
+            onClick={onReset}
+            className="rounded-xl bg-slate-900/85 backdrop-blur-xl border border-white/10 shadow-xl px-3 py-2 text-xs text-slate-300 hover:text-white hover:bg-white/5 transition-all flex items-center gap-1.5 font-medium"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            리셋
+          </button>
+        </div>
       </div>
 
       {/* Location chip */}

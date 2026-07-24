@@ -36,6 +36,7 @@ export default function RacingGame() {
 
   const [active, setActive] = useState(false);
   const [weather, setWeather] = useState<WeatherMode>('day');
+  const [showBuildings, setShowBuildings] = useState(true);
   const [locationLabel, setLocationLabel] = useState('서울');
   const [ready, setReady] = useState(false);
   const [mapLoading, setMapLoading] = useState(true);
@@ -291,6 +292,19 @@ export default function RacingGame() {
   useEffect(() => {
     applyWeather(weather);
   }, [weather, applyWeather, ready]);
+
+  // toggle 3d-buildings visibility
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    if (map.getLayer('3d-buildings')) {
+      map.setLayoutProperty(
+        '3d-buildings',
+        'visibility',
+        showBuildings ? 'visible' : 'none',
+      );
+    }
+  }, [showBuildings, ready]);
 
   // Collision flash visual feedback
   useEffect(() => {
@@ -583,7 +597,9 @@ export default function RacingGame() {
             car={car}
             locationLabel={locationLabel}
             weather={weather}
+            showBuildings={showBuildings}
             onWeatherChange={setWeather}
+            onToggleBuildings={setShowBuildings}
             onReset={handleReset}
           />
         </>
