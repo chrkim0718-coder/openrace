@@ -642,12 +642,34 @@ export default function RacingGame() {
     setIsMuted(muted);
   }, []);
 
+  const handleWeatherChange = useCallback((w: WeatherMode) => {
+    setWeather(w);
+    if (w === 'night') {
+      setTimeInMinutes(1380); // 23:00 Night
+    } else if (w === 'rain') {
+      setTimeInMinutes(1110); // 18:30 Sunset
+    } else if (w === 'snow') {
+      setTimeInMinutes(360); // 06:00 Sunrise
+    } else if (w === 'day') {
+      setTimeInMinutes(720); // 12:00 Day
+    }
+  }, []);
+
   // Course selection and Random Scenic generator
   const handleSelectCourse = useCallback(
     (course: ScenicCourse) => {
       setIsLiveWeather(false);
       setLiveWeatherDesc('');
       setWeather(course.weather);
+      if (course.weather === 'night') {
+        setTimeInMinutes(1380); // 23:00 Night
+      } else if (course.weather === 'rain') {
+        setTimeInMinutes(1110); // 18:30 Sunset
+      } else if (course.weather === 'snow') {
+        setTimeInMinutes(360); // 06:00 Sunrise
+      } else {
+        setTimeInMinutes(720); // 12:00 Day
+      }
       setCameraMode('topdown');
       setTerrainScale(1.0);
       handleTeleport(course.lat, course.lng, `${course.name} (${course.location})`);
@@ -874,7 +896,7 @@ export default function RacingGame() {
             liveWeatherDesc={liveWeatherDesc}
             onTimeChange={setTimeInMinutes}
             onToggleTimeAutoFlow={() => setIsTimeAutoFlow((prev) => !prev)}
-            onWeatherChange={setWeather}
+            onWeatherChange={handleWeatherChange}
             onToggleBuildings={setShowBuildings}
             onToggleCollision={setEnableCollision}
             onToggleLabels={setShowLabels}
