@@ -7,10 +7,10 @@ export const CAMERA_CONFIG: Record<
   CameraMode,
   { pitch: number; zoom: number; label: string }
 > = {
-  chase: { pitch: 70, zoom: 17.6, label: '3인칭 드라이빙' },
-  topdown: { pitch: 58, zoom: 17.0, label: '탑다운 조감도' },
-  sky: { pitch: 35, zoom: 15.5, label: '스카이뷰' },
-  bonnet: { pitch: 73, zoom: 18.2, label: '1인칭 보닛' },
+  chase: { pitch: 70, zoom: 16.8, label: '3인칭 드라이빙' },
+  topdown: { pitch: 58, zoom: 16.2, label: '탑다운 조감도' },
+  sky: { pitch: 35, zoom: 15.2, label: '스카이뷰' },
+  bonnet: { pitch: 73, zoom: 17.5, label: '1인칭 보닛' },
 };
 
 export const CAMERA_MODES: CameraMode[] = ['chase', 'topdown', 'sky', 'bonnet'];
