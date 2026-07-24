@@ -29,6 +29,7 @@ export function useCarPhysics(
   initial: { lat: number; lng: number; heading: number },
   active: boolean,
   collisionRef?: React.MutableRefObject<CollisionData | null>,
+  enableCollision: boolean = true,
 ) {
   const [car, setCar] = useState<CarState>({
     lat: initial.lat,
@@ -127,7 +128,7 @@ export function useCarPhysics(
         let collided = false;
         let offRoad = false;
 
-        if (coll && Math.abs(speed) > 0.5) {
+        if (enableCollision && coll && Math.abs(speed) > 0.5) {
           // Check building collision
           for (const b of coll.buildings) {
             const poly = b.geometry.coordinates[0];
@@ -162,7 +163,7 @@ export function useCarPhysics(
               offRoad = true;
             }
           }
-        } else if (coll && Math.abs(speed) <= 0.5) {
+        } else if (enableCollision && coll && Math.abs(speed) <= 0.5) {
           // If stationary and stuck inside building, push to nearest road
           if (isPointInsideBuilding(prev.lat, prev.lng, coll.buildings)) {
             const safePos = findSafeRoadPosition(

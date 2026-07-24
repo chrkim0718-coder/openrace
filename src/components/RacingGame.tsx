@@ -37,6 +37,7 @@ export default function RacingGame() {
   const [active, setActive] = useState(false);
   const [weather, setWeather] = useState<WeatherMode>('day');
   const [showBuildings, setShowBuildings] = useState(true);
+  const [enableCollision, setEnableCollision] = useState(true);
   const [locationLabel, setLocationLabel] = useState('서울');
   const [ready, setReady] = useState(false);
   const [mapLoading, setMapLoading] = useState(true);
@@ -48,6 +49,7 @@ export default function RacingGame() {
     INITIAL,
     active,
     collisionRef,
+    enableCollision,
   );
 
   // init map
@@ -598,8 +600,10 @@ export default function RacingGame() {
             locationLabel={locationLabel}
             weather={weather}
             showBuildings={showBuildings}
+            enableCollision={enableCollision}
             onWeatherChange={setWeather}
             onToggleBuildings={setShowBuildings}
+            onToggleCollision={setEnableCollision}
             onReset={handleReset}
           />
         </>

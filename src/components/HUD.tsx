@@ -1,4 +1,4 @@
-import { Gauge, MapPin, Sparkles, Building2 } from 'lucide-react';
+import { Gauge, MapPin, Sparkles, Building2, Shield } from 'lucide-react';
 import type { CarState, WeatherMode } from '@/types/game';
 
 interface Props {
@@ -6,8 +6,10 @@ interface Props {
   locationLabel: string;
   weather: WeatherMode;
   showBuildings: boolean;
+  enableCollision: boolean;
   onWeatherChange: (w: WeatherMode) => void;
   onToggleBuildings: (show: boolean) => void;
+  onToggleCollision: (enable: boolean) => void;
   onReset: () => void;
 }
 
@@ -23,8 +25,10 @@ export default function HUD({
   locationLabel,
   weather,
   showBuildings,
+  enableCollision,
   onWeatherChange,
   onToggleBuildings,
+  onToggleCollision,
   onReset,
 }: Props) {
   const speed = Math.abs(Math.round(car.speed));
@@ -149,6 +153,17 @@ export default function HUD({
           >
             <Building2 className="h-3.5 w-3.5" />
             3D 건물 {showBuildings ? 'ON' : 'OFF'}
+          </button>
+          <button
+            onClick={() => onToggleCollision(!enableCollision)}
+            className={`rounded-xl backdrop-blur-xl border shadow-xl px-3 py-2 text-xs transition-all flex items-center gap-1.5 font-medium ${
+              enableCollision
+                ? 'bg-emerald-500/25 border-emerald-400/40 text-emerald-200 hover:bg-emerald-500/35'
+                : 'bg-amber-500/25 border-amber-400/40 text-amber-200 hover:bg-amber-500/35'
+            }`}
+          >
+            <Shield className="h-3.5 w-3.5" />
+            충돌 {enableCollision ? 'ON' : 'OFF'}
           </button>
           <button
             onClick={onReset}
