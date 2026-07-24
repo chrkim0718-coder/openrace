@@ -87,10 +87,59 @@ export function useCarPhysics(
             speed = Math.max(showcaseSpeedTarget, speed - BRAKE * dt * 0.4);
           }
 
-          // Ultra gentle long-wave curve steering without any sharp dizzying turns
-          const nowSec = performance.now() / 1000;
-          const targetSteer = Math.sin(nowSec * 0.15) * 0.12;
-          steer += (targetSteer - steer) * Math.min(1, 2 * dt);
+          // ── Road-Following Auto Steering Engine (Sticks to OSM roads) ──────
+          const coll = collisionRef?.current;
+          let targetSteer = 0;
+          let foundRoadTarget = false;
+
+          if (coll && coll.roads && coll.roads.length > 0) {
+            let bestDist = Infinity;
+            let bestNode: RoadSegment | null = null;
+            const cosLat = Math.cos((prev.lat * Math.PI) / 180);
+
+            for (const r of coll.roads) {
+              const dLat = r.lat - prev.lat;
+              const dLng = (r.lng - prev.lng) * cosLat;
+              const distMeters = Math.hypot(dLat * 111111, dLng * 111111);
+
+              // Look for road nodes 6 to 50 meters ahead of the vehicle
+              if (distMeters >= 6 && distMeters <= 50) {
+                const nodeBearing = (Math.atan2(dLng, dLat) * (180 / Math.PI) + 360) % 360;
+                let angleDiff = (nodeBearing - prev.heading) % 360;
+                if (angleDiff > 180) angleDiff -= 360;
+                if (angleDiff < -180) angleDiff += 360;
+
+                // Candidate must be in front of the vehicle (-75 to +75 degrees)
+                if (Math.abs(angleDiff) < 75) {
+                  if (distMeters < bestDist) {
+                    bestDist = distMeters;
+                    bestNode = r;
+                  }
+                }
+              }
+            }
+
+            if (bestNode) {
+              const dLat = bestNode.lat - prev.lat;
+              const dLng = (bestNode.lng - prev.lng) * cosLat;
+              const nodeBearing = (Math.atan2(dLng, dLat) * (180 / Math.PI) + 360) % 360;
+              let angleDiff = (nodeBearing - prev.heading) % 360;
+              if (angleDiff > 180) angleDiff -= 360;
+              if (angleDiff < -180) angleDiff += 360;
+
+              // Smoothly steer towards the road target point
+              targetSteer = Math.max(-0.5, Math.min(0.5, angleDiff / 45));
+              foundRoadTarget = true;
+            }
+          }
+
+          if (!foundRoadTarget) {
+            // Fallback: Ultra gentle long-wave curve steering when no road node is immediately detected
+            const nowSec = performance.now() / 1000;
+            targetSteer = Math.sin(nowSec * 0.15) * 0.12;
+          }
+
+          steer += (targetSteer - steer) * Math.min(1, 3 * dt);
         } else {
           // Manual driving controls
           if (k.forward) speed += accel * dt;
