@@ -202,8 +202,8 @@ export function distToNearestRoad(
   return minDist;
 }
 
-// Calculate a beautiful pastel color based on building type, height, and coordinate hash
-export function getPastelBuildingColor(
+// Calculate a futuristic Hologram Glass color based on building type, height, and coordinate hash
+export function getHologramBuildingColor(
   buildingType: string,
   height: number,
   firstCoord: number[],
@@ -218,7 +218,13 @@ export function getPastelBuildingColor(
   }
   const variant = hash % 4;
 
-  // Commercial / Retail / Hotel / Mall (Pastel Rose / Coral / Pink)
+  // Office / Skyscraper / High-rise (Cyber Cyan / Electric Blue Glass)
+  if (b === 'office' || b === 'skyscraper' || height >= 35) {
+    const palette = ['#38bdf8', '#0284c7', '#60a5fa', '#06b6d4'];
+    return palette[variant];
+  }
+
+  // Commercial / Retail / Hotel / Mall (Holographic Pink / Neon Magenta Glass)
   if (
     b === 'commercial' ||
     b === 'retail' ||
@@ -227,17 +233,11 @@ export function getPastelBuildingColor(
     b === 'mall' ||
     b === 'kiosk'
   ) {
-    const palette = ['#f472b6', '#fda4af', '#fb7185', '#f43f5e'];
+    const palette = ['#ec4899', '#f43f5e', '#e0e7ff', '#c084fc'];
     return palette[variant];
   }
 
-  // Office / Skyscraper / High-rise (Pastel Sky Blue / Cyan / Ice)
-  if (b === 'office' || b === 'skyscraper' || height >= 35) {
-    const palette = ['#60a5fa', '#38bdf8', '#7dd3fc', '#93c5fd'];
-    return palette[variant];
-  }
-
-  // Apartments / Residential / House (Pastel Cream / Warm Peach / Sand)
+  // Apartments / Residential / House (Warm Amber / Gold Glass)
   if (
     b === 'apartments' ||
     b === 'residential' ||
@@ -246,11 +246,11 @@ export function getPastelBuildingColor(
     b === 'terrace' ||
     b === 'dormitory'
   ) {
-    const palette = ['#fcd34d', '#fed7aa', '#fde68a', '#fef08a'];
+    const palette = ['#fbbf24', '#f59e0b', '#fde047', '#fed7aa'];
     return palette[variant];
   }
 
-  // School / Hospital / Public / Civic / Religion (Pastel Mint / Emerald / Sage)
+  // School / Hospital / Public / Civic / Religion (Neon Emerald Glass)
   if (
     b === 'school' ||
     b === 'hospital' ||
@@ -260,24 +260,12 @@ export function getPastelBuildingColor(
     b === 'church' ||
     b === 'public'
   ) {
-    const palette = ['#6ee7b7', '#a7f3d0', '#34d399', '#4ade80'];
+    const palette = ['#34d399', '#10b981', '#6ee7b7', '#4ade80'];
     return palette[variant];
   }
 
-  // Industrial / Warehouse / Garage / Service (Pastel Lavender / Violet / Lilac)
-  if (
-    b === 'industrial' ||
-    b === 'warehouse' ||
-    b === 'service' ||
-    b === 'manufacture' ||
-    b === 'garage'
-  ) {
-    const palette = ['#c084fc', '#ddd6fe', '#a78bfa', '#c4b5fd'];
-    return palette[variant];
-  }
-
-  // General default buildings (Soft pastel slate / mauve / teal tones)
-  const defaultPalette = ['#94a3b8', '#cbd5e1', '#a1a1aa', '#99f6e4'];
+  // General default buildings (Cyber Indigo & Teal Glass)
+  const defaultPalette = ['#38bdf8', '#818cf8', '#a5b4fc', '#22d3ee'];
   return defaultPalette[variant];
 }
 
@@ -433,7 +421,7 @@ export async function fetchAreaData(
         : 0;
       const bType = tags['building'] || 'yes';
 
-      const color = getPastelBuildingColor(bType, height, coords[0]);
+      const color = getHologramBuildingColor(bType, height, coords[0]);
 
       buildings.push({
         type: 'Feature',

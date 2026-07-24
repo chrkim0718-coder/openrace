@@ -149,19 +149,37 @@ export default function RacingGame() {
           data: { type: 'FeatureCollection', features: [] },
         });
       }
+      if (!map.getLayer('building-outlines')) {
+        map.addLayer(
+          {
+            id: 'building-outlines',
+            source: 'buildings',
+            type: 'line',
+            layout: {
+              visibility: showBuildings ? 'visible' : 'none',
+            },
+            paint: {
+              'line-color': '#38bdf8',
+              'line-width': 2,
+              'line-opacity': 0.6,
+            },
+          },
+          'satellite-tiles',
+        );
+      }
       if (!map.getLayer('3d-buildings')) {
         map.addLayer({
           id: '3d-buildings',
           source: 'buildings',
           type: 'fill-extrusion',
           layout: {
-            visibility: 'none',
+            visibility: showBuildings ? 'visible' : 'none',
           },
           paint: {
-            'fill-extrusion-color': ['coalesce', ['get', 'color'], '#cbd5e1'],
+            'fill-extrusion-color': ['coalesce', ['get', 'color'], '#38bdf8'],
             'fill-extrusion-height': ['get', 'height'],
             'fill-extrusion-base': ['get', 'min_height'],
-            'fill-extrusion-opacity': 0.88,
+            'fill-extrusion-opacity': 0.38,
           },
         });
       }
@@ -299,16 +317,16 @@ export default function RacingGame() {
     applyWeather(weather);
   }, [weather, applyWeather, ready]);
 
-  // toggle 3d-buildings visibility
+  // toggle 3d-buildings and outlines visibility
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
+    const vis = showBuildings ? 'visible' : 'none';
     if (map.getLayer('3d-buildings')) {
-      map.setLayoutProperty(
-        '3d-buildings',
-        'visibility',
-        showBuildings ? 'visible' : 'none',
-      );
+      map.setLayoutProperty('3d-buildings', 'visibility', vis);
+    }
+    if (map.getLayer('building-outlines')) {
+      map.setLayoutProperty('building-outlines', 'visibility', vis);
     }
   }, [showBuildings, ready]);
 
