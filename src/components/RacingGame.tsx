@@ -376,6 +376,7 @@ export default function RacingGame() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [active]);
 
+  const [weatherIntensity, setWeatherIntensity] = useState<number>(3); // 1 to 5 intensity
   const [timeInMinutes, setTimeInMinutes] = useState<number>(720); // Default 12:00 PM
   const [isTimeAutoFlow, setIsTimeAutoFlow] = useState<boolean>(false);
 
@@ -776,14 +777,16 @@ export default function RacingGame() {
       {/* rain effect */}
       {weather === 'rain' && (
         <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
-          {Array.from({ length: 60 }).map((_, i) => (
+          {Array.from({ length: weatherIntensity * 40 + 10 }).map((_, i) => (
             <div
               key={i}
-              className="absolute w-px h-8 bg-gradient-to-b from-transparent via-cyan-200/40 to-transparent animate-rain"
+              className="absolute w-px bg-gradient-to-b from-transparent via-cyan-200/50 to-transparent animate-rain"
               style={{
-                left: `${(i * 1.7) % 100}%`,
-                animationDelay: `${(i % 10) * 0.12}s`,
-                animationDuration: `${0.5 + (i % 5) * 0.1}s`,
+                height: `${24 + weatherIntensity * 6}px`,
+                left: `${(i * 1.37) % 100}%`,
+                animationDelay: `${(i % 10) * 0.08}s`,
+                animationDuration: `${Math.max(0.2, 0.65 - weatherIntensity * 0.08 + (i % 5) * 0.05)}s`,
+                opacity: Math.min(1, 0.4 + weatherIntensity * 0.12),
               }}
             />
           ))}
@@ -793,8 +796,8 @@ export default function RacingGame() {
       {/* snow effect */}
       {weather === 'snow' && (
         <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
-          {Array.from({ length: 85 }).map((_, i) => {
-            const size = (i % 3) * 1.5 + 2; // 2px to 5px
+          {Array.from({ length: weatherIntensity * 40 + 10 }).map((_, i) => {
+            const size = (i % 3) * 1.5 + 2;
             return (
               <div
                 key={i}
@@ -802,10 +805,10 @@ export default function RacingGame() {
                 style={{
                   width: `${size}px`,
                   height: `${size}px`,
-                  left: `${(i * 1.23) % 100}%`,
-                  animationDelay: `${(i % 12) * 0.25}s`,
-                  animationDuration: `${2.8 + (i % 5) * 0.7}s`,
-                  opacity: 0.6 + (i % 4) * 0.1,
+                  left: `${(i * 1.17) % 100}%`,
+                  animationDelay: `${(i % 12) * 0.2}s`,
+                  animationDuration: `${Math.max(1.5, 3.5 - weatherIntensity * 0.3 + (i % 5) * 0.5)}s`,
+                  opacity: Math.min(1, 0.5 + weatherIntensity * 0.1),
                 }}
               />
             );
@@ -884,6 +887,7 @@ export default function RacingGame() {
             car={car}
             locationLabel={locationLabel}
             weather={weather}
+            weatherIntensity={weatherIntensity}
             showBuildings={showBuildings}
             enableCollision={enableCollision}
             showLabels={showLabels}
@@ -897,6 +901,7 @@ export default function RacingGame() {
             onTimeChange={setTimeInMinutes}
             onToggleTimeAutoFlow={() => setIsTimeAutoFlow((prev) => !prev)}
             onWeatherChange={handleWeatherChange}
+            onWeatherIntensityChange={setWeatherIntensity}
             onToggleBuildings={setShowBuildings}
             onToggleCollision={setEnableCollision}
             onToggleLabels={setShowLabels}

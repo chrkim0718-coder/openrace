@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Gauge, MapPin, Sparkles, Building2, Shield, Mountain, Tag, Camera, CloudSun, Volume2, VolumeX, Clock } from 'lucide-react';
+import { Gauge, MapPin, Sparkles, Building2, Shield, Mountain, Tag, Camera, CloudSun, Volume2, VolumeX, Clock, Sliders } from 'lucide-react';
 import type { CarState, WeatherMode } from '@/types/game';
 import { getTimeOfDayAtmosphere } from '@/utils/timeOfDay';
 
@@ -25,10 +25,19 @@ export const TERRAIN_LEVELS = [
   { value: 5.0, label: '5x (극대)' },
 ];
 
+export const INTENSITY_LABELS: Record<number, string> = {
+  1: '약하게 (가슬비/날리는눈)',
+  2: '보통',
+  3: '강하게 (세찬눈비)',
+  4: '폭우 / 폭설',
+  5: '태풍 / 대폭설',
+};
+
 interface Props {
   car: CarState;
   locationLabel: string;
   weather: WeatherMode;
+  weatherIntensity: number;
   showBuildings: boolean;
   enableCollision: boolean;
   showLabels: boolean;
@@ -40,6 +49,7 @@ interface Props {
   timeInMinutes: number;
   isTimeAutoFlow: boolean;
   onWeatherChange: (w: WeatherMode) => void;
+  onWeatherIntensityChange: (intensity: number) => void;
   onToggleBuildings: (show: boolean) => void;
   onToggleCollision: (enable: boolean) => void;
   onToggleLabels: (show: boolean) => void;
@@ -63,6 +73,7 @@ export default function HUD({
   car,
   locationLabel,
   weather,
+  weatherIntensity,
   showBuildings,
   enableCollision,
   showLabels,
@@ -74,6 +85,7 @@ export default function HUD({
   timeInMinutes,
   isTimeAutoFlow,
   onWeatherChange,
+  onWeatherIntensityChange,
   onToggleBuildings,
   onToggleCollision,
   onToggleLabels,
@@ -86,6 +98,8 @@ export default function HUD({
   onReset,
 }: Props) {
   const [timePickerOpen, setTimePickerOpen] = useState(false);
+  const [intensityPickerOpen, setIntensityPickerOpen] = useState(false);
+
   const speed = Math.abs(Math.round(car.speed));
   const gear = car.speed >= 0 ? 'D' : 'R';
   const atmos = getTimeOfDayAtmosphere(timeInMinutes);
@@ -258,6 +272,57 @@ export default function HUD({
               </div>
             )}
           </div>
+
+          {/* Weather Intensity Slider (for rain / snow) */}
+          {(weather === 'rain' || weather === 'snow') && (
+            <div className="relative">
+              <button
+                onClick={() => setIntensityPickerOpen((prev) => !prev)}
+                className="px-2.5 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-200 text-xs font-bold transition-all flex items-center gap-1.5 shadow-md"
+                title="눈/비 강도 5단계 슬라이더 조절"
+              >
+                <Sliders className="h-3.5 w-3.5 text-cyan-300" />
+                <span>
+                  {weather === 'rain' ? '🌧️' : '❄️'} 강도 {weatherIntensity}단계
+                </span>
+              </button>
+
+              {intensityPickerOpen && (
+                <div className="absolute top-11 right-0 w-64 p-3.5 rounded-2xl bg-slate-900/95 backdrop-blur-2xl border border-cyan-400/40 shadow-2xl space-y-3 z-[70] animate-fade-in">
+                  <div className="flex items-center justify-between text-xs font-bold text-cyan-300 border-b border-white/10 pb-2">
+                    <span>{weather === 'rain' ? '🌧️ 강수량 조절' : '❄️ 적설량 조절'}</span>
+                    <span className="text-[11px] text-cyan-200">{weatherIntensity}단계 ({INTENSITY_LABELS[weatherIntensity]})</span>
+                  </div>
+
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    step="1"
+                    value={weatherIntensity}
+                    onChange={(e) => onWeatherIntensityChange(parseInt(e.target.value, 10))}
+                    className="w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+                  />
+
+                  <div className="grid grid-cols-5 gap-1 text-[9px] font-bold text-center">
+                    {[1, 2, 3, 4, 5].map((lvl) => (
+                      <button
+                        key={lvl}
+                        onClick={() => onWeatherIntensityChange(lvl)}
+                        className={`py-1 rounded-lg border transition-all ${
+                          weatherIntensity === lvl
+                            ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200 font-bold'
+                            : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {lvl}단계
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <button
             onClick={onToggleLiveWeather}
