@@ -5,7 +5,6 @@ import { useCarPhysics } from '@/hooks/useCarPhysics';
 import type { CollisionData } from '@/hooks/useCarPhysics';
 import SearchPanel from '@/components/SearchPanel';
 import HUD, { CameraMode, CAMERA_CONFIG, CAMERA_MODES } from '@/components/HUD';
-import { createCar3DLayer, setCar3DState } from '@/utils/car3DLayer';
 import RadioPlayer from '@/components/RadioPlayer';
 import {
   fetchAreaData,
@@ -43,7 +42,7 @@ export default function RacingGame() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<HTMLDivElement | null>(null);
-  const car3DLayerRef = useRef<boolean>(false); // track if layer is added
+  // No Three.js layer — using premium HTML/SVG marker for reliable cross-platform rendering
 
   const [active, setActive] = useState(false);
   const [weather, setWeather] = useState<WeatherMode>('day');
@@ -278,19 +277,82 @@ export default function RacingGame() {
         console.warn('Initial buildings fetch failed:', err);
       }
 
-      // ── Add Three.js 3D car custom layer ──
-      if (!car3DLayerRef.current) {
-        setCar3DState({
-          lat: INITIAL.lat,
-          lng: INITIAL.lng,
-          heading: INITIAL.heading,
-          speed: 0,
-          steerAngle: 0,
-        });
-        const carLayer = createCar3DLayer(map);
-        map.addLayer(carLayer);
-        car3DLayerRef.current = true;
-      }
+      // ── Premium SVG car marker ──
+      const el = document.createElement('div');
+      el.className = 'car-marker';
+      el.style.cssText = 'position:relative; width:40px; height:70px; pointer-events:none; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.7));';
+      el.innerHTML = `
+        <svg width="40" height="70" viewBox="0 0 40 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Car shadow -->
+          <ellipse cx="20" cy="65" rx="14" ry="4" fill="rgba(0,0,0,0.35)"/>
+          <!-- Rear bumper -->
+          <rect x="8" y="56" width="24" height="5" rx="2.5" fill="#0f172a"/>
+          <!-- Main body -->
+          <rect x="5" y="14" width="30" height="44" rx="7" fill="#1d4ed8"/>
+          <!-- Body highlight -->
+          <rect x="7" y="16" width="26" height="40" rx="6" fill="#2563eb"/>
+          <!-- Roof / cabin -->
+          <rect x="9" y="22" width="22" height="22" rx="5" fill="#1e40af"/>
+          <!-- Windshield front -->
+          <rect x="10" y="17" width="20" height="12" rx="3" fill="#7dd3fc" opacity="0.75"/>
+          <!-- Windshield specular -->
+          <rect x="11" y="18" width="9" height="3" rx="1.5" fill="white" opacity="0.3"/>
+          <!-- Rear window -->
+          <rect x="10" y="41" width="20" height="8" rx="3" fill="#38bdf8" opacity="0.5"/>
+          <!-- Hood line -->
+          <line x1="12" y1="28" x2="28" y2="28" stroke="#1e40af" stroke-width="0.8" opacity="0.6"/>
+          <!-- Front bumper -->
+          <rect x="8" y="9" width="24" height="6" rx="3" fill="#0f172a"/>
+          <!-- Grille -->
+          <rect x="12" y="10" width="16" height="3" rx="1.5" fill="#374151"/>
+          <!-- Front headlights -->
+          <rect x="6" y="9" width="7" height="4" rx="2" fill="#fef3c7" opacity="0.95"/>
+          <rect x="27" y="9" width="7" height="4" rx="2" fill="#fef3c7" opacity="0.95"/>
+          <!-- DRL strips -->
+          <rect x="7" y="10" width="5" height="1.5" rx="0.75" fill="white" opacity="0.8"/>
+          <rect x="28" y="10" width="5" height="1.5" rx="0.75" fill="white" opacity="0.8"/>
+          <!-- Taillights -->
+          <rect x="6" y="57" width="7" height="4" rx="2" fill="#ef4444" opacity="0.9"/>
+          <rect x="27" y="57" width="7" height="4" rx="2" fill="#ef4444" opacity="0.9"/>
+          <!-- Side trim left -->
+          <rect x="5" y="32" width="2" height="12" rx="1" fill="#1e3a8a"/>
+          <!-- Side trim right -->
+          <rect x="33" y="32" width="2" height="12" rx="1" fill="#1e3a8a"/>
+          <!-- Front wheels (steerable) -->
+          <g id="wheel-fl">
+            <rect x="1" y="16" width="6" height="12" rx="2.5" fill="#111827"/>
+            <rect x="2.5" y="17.5" width="3" height="9" rx="1.5" fill="#374151"/>
+            <circle cx="4" cy="22" r="1.5" fill="#9ca3af"/>
+          </g>
+          <g id="wheel-fr">
+            <rect x="33" y="16" width="6" height="12" rx="2.5" fill="#111827"/>
+            <rect x="34.5" y="17.5" width="3" height="9" rx="1.5" fill="#374151"/>
+            <circle cx="36" cy="22" r="1.5" fill="#9ca3af"/>
+          </g>
+          <!-- Rear wheels -->
+          <rect x="1" y="44" width="6" height="12" rx="2.5" fill="#111827"/>
+          <rect x="2.5" y="45.5" width="3" height="9" rx="1.5" fill="#374151"/>
+          <circle cx="4" cy="50" r="1.5" fill="#9ca3af"/>
+          <rect x="33" y="44" width="6" height="12" rx="2.5" fill="#111827"/>
+          <rect x="34.5" y="45.5" width="3" height="9" rx="1.5" fill="#374151"/>
+          <circle cx="36" cy="50" r="1.5" fill="#9ca3af"/>
+          <!-- Roof sheen -->
+          <ellipse cx="20" cy="29" rx="7" ry="4" fill="white" opacity="0.06"/>
+        </svg>
+      `;
+
+      markerRef.current = el;
+
+      const marker = new maplibregl.Marker({
+        element: el,
+        rotationAlignment: 'map',
+        pitchAlignment: 'map',
+        anchor: 'center',
+      })
+        .setLngLat([INITIAL.lng, INITIAL.lat])
+        .addTo(map);
+
+      (mapRef.current as any)._marker = marker;
 
       setReady(true);
     });
@@ -307,14 +369,21 @@ export default function RacingGame() {
     const map = mapRef.current;
     if (!map || !ready) return;
 
-    // ── Push latest car state to Three.js 3D layer (runs every physics tick) ──
-    setCar3DState({
-      lat: car.lat,
-      lng: car.lng,
-      heading: car.heading,
-      speed: car.speed,
-      steerAngle: car.steerAngle,
-    });
+    // ── Update car HTML/SVG marker location & rotation ──────────────────
+    const marker = (map as any)._marker;
+    if (marker) {
+      marker.setLngLat([car.lng, car.lat]);
+      marker.setRotation(car.heading);
+
+      const el = markerRef.current;
+      if (el) {
+        const wFL = el.querySelector('#wheel-fl') as SVGElement | null;
+        const wFR = el.querySelector('#wheel-fr') as SVGElement | null;
+        const steerDeg = car.steerAngle * 25;
+        if (wFL) wFL.setAttribute('transform', `rotate(${steerDeg} 4 22)`);
+        if (wFR) wFR.setAttribute('transform', `rotate(${steerDeg} 36 22)`);
+      }
+    }
 
     const cfg = CAMERA_CONFIG[cameraMode];
     let targetBearing = car.heading;

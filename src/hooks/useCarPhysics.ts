@@ -57,6 +57,14 @@ export function useCarPhysics(
   const rafRef = useRef<number>(0);
   const collisionFlashRef = useRef(0);
 
+  // ── Refs for values used inside the animation loop ──────────────────────
+  // These bypass the stale-closure problem: the loop always reads .current
+  const isShowcaseModeRef = useRef(isShowcaseMode);
+  const showcaseSpeedRef = useRef(showcaseSpeedTarget);
+
+  useEffect(() => { isShowcaseModeRef.current = isShowcaseMode; }, [isShowcaseMode]);
+  useEffect(() => { showcaseSpeedRef.current = showcaseSpeedTarget; }, [showcaseSpeedTarget]);
+
   useEffect(() => {
     if (!active) {
       cancelAnimationFrame(rafRef.current);
@@ -72,6 +80,9 @@ export function useCarPhysics(
 
       setCar((prev) => {
         const k = keysRef.current;
+        // Always read from refs — never from closed-over props
+        const inShowcase = isShowcaseModeRef.current;
+        const speedTarget = showcaseSpeedRef.current;
         let speed = prev.speed;
         let steer = prev.steerAngle;
 
@@ -79,12 +90,12 @@ export function useCarPhysics(
         const maxSpeed = turboActive ? TURBO_SPEED : MAX_SPEED;
         const accel = turboActive ? TURBO_ACCEL : ACCEL;
 
-        if (isShowcaseMode) {
+        if (inShowcase) {
           // Smooth cruise speed control in showcase mode (calm and steady)
-          if (speed < showcaseSpeedTarget) {
-            speed = Math.min(showcaseSpeedTarget, speed + ACCEL * dt * 0.3);
-          } else if (speed > showcaseSpeedTarget) {
-            speed = Math.max(showcaseSpeedTarget, speed - BRAKE * dt * 0.4);
+          if (speed < speedTarget) {
+            speed = Math.min(speedTarget, speed + ACCEL * dt * 0.3);
+          } else if (speed > speedTarget) {
+            speed = Math.max(speedTarget, speed - BRAKE * dt * 0.4);
           }
 
           // ── Road-Following Auto Steering Engine (Sticks to OSM roads) ──────
