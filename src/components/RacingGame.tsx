@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { useCarPhysics } from '@/hooks/useCarPhysics';
 import type { CollisionData } from '@/hooks/useCarPhysics';
 import SearchPanel from '@/components/SearchPanel';
-import HUD from '@/components/HUD';
+import HUD, { CameraMode, CAMERA_CONFIG, CAMERA_MODES } from '@/components/HUD';
 import {
   fetchAreaData,
   getCachedData,
@@ -41,6 +41,7 @@ export default function RacingGame() {
   const [enableCollision, setEnableCollision] = useState(false);
   const [showLabels, setShowLabels] = useState(true);
   const [terrainScale, setTerrainScale] = useState(1.0);
+  const [cameraMode, setCameraMode] = useState<CameraMode>('chase');
   const [locationLabel, setLocationLabel] = useState('서울');
   const [ready, setReady] = useState(false);
   const [mapLoading, setMapLoading] = useState(true);
@@ -86,9 +87,10 @@ export default function RacingGame() {
         ],
       },
       center: [INITIAL.lng, INITIAL.lat],
-      zoom: 17,
+      zoom: 18.2,
       bearing: 0,
-      pitch: 55,
+      pitch: 80,
+      maxPitch: 85,
       attributionControl: { compact: true },
       dragRotate: false,
       dragPan: false,
@@ -325,13 +327,30 @@ export default function RacingGame() {
       });
     }
 
-    // camera follows car with 3D pitch view
+    // camera follows car according to selected camera mode
+    const cfg = CAMERA_CONFIG[cameraMode];
     map.jumpTo({
       center: [car.lng, car.lat],
       bearing: car.heading,
-      pitch: 62,
+      pitch: cfg.pitch,
+      zoom: cfg.zoom,
     });
-  }, [car, ready]);
+  }, [car, ready, cameraMode]);
+
+  // V key shortcut to cycle camera view mode
+  useEffect(() => {
+    if (!active) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'KeyV') {
+        setCameraMode((prev) => {
+          const idx = CAMERA_MODES.indexOf(prev);
+          return CAMERA_MODES[(idx + 1) % CAMERA_MODES.length];
+        });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [active]);
 
   // weather overlay
   const applyWeather = useCallback((w: WeatherMode) => {
@@ -790,11 +809,13 @@ export default function RacingGame() {
             enableCollision={enableCollision}
             showLabels={showLabels}
             terrainScale={terrainScale}
+            cameraMode={cameraMode}
             onWeatherChange={setWeather}
             onToggleBuildings={setShowBuildings}
             onToggleCollision={setEnableCollision}
             onToggleLabels={setShowLabels}
             onTerrainScaleChange={setTerrainScale}
+            onToggleCameraMode={setCameraMode}
             onReset={handleReset}
           />
         </>

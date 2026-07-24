@@ -1,5 +1,19 @@
-import { Gauge, MapPin, Sparkles, Building2, Shield, Mountain, Tag } from 'lucide-react';
+import { Gauge, MapPin, Sparkles, Building2, Shield, Mountain, Tag, Camera } from 'lucide-react';
 import type { CarState, WeatherMode } from '@/types/game';
+
+export type CameraMode = 'chase' | 'topdown' | 'sky' | 'bonnet';
+
+export const CAMERA_CONFIG: Record<
+  CameraMode,
+  { pitch: number; zoom: number; label: string }
+> = {
+  chase: { pitch: 80, zoom: 18.2, label: '3인칭 (Slow Roads)' },
+  topdown: { pitch: 58, zoom: 17.0, label: '탑다운 조감도' },
+  sky: { pitch: 35, zoom: 15.5, label: '스카이뷰' },
+  bonnet: { pitch: 85, zoom: 19.4, label: '1인칭 보닛' },
+};
+
+export const CAMERA_MODES: CameraMode[] = ['chase', 'topdown', 'sky', 'bonnet'];
 
 export const TERRAIN_LEVELS = [
   { value: 0, label: '0x (평지)' },
@@ -17,11 +31,13 @@ interface Props {
   enableCollision: boolean;
   showLabels: boolean;
   terrainScale: number;
+  cameraMode: CameraMode;
   onWeatherChange: (w: WeatherMode) => void;
   onToggleBuildings: (show: boolean) => void;
   onToggleCollision: (enable: boolean) => void;
   onToggleLabels: (show: boolean) => void;
   onTerrainScaleChange: (scale: number) => void;
+  onToggleCameraMode: (mode: CameraMode) => void;
   onReset: () => void;
 }
 
@@ -40,11 +56,13 @@ export default function HUD({
   enableCollision,
   showLabels,
   terrainScale,
+  cameraMode,
   onWeatherChange,
   onToggleBuildings,
   onToggleCollision,
   onToggleLabels,
   onTerrainScaleChange,
+  onToggleCameraMode,
   onReset,
 }: Props) {
   const speed = Math.abs(Math.round(car.speed));
@@ -134,8 +152,8 @@ export default function HUD({
               D / →
             </kbd>
           </div>
-          <p className="text-[10px] text-slate-500 text-center">
-            가속/감속/좌/우 · Shift 터보
+          <p className="text-[10px] text-slate-400 text-center font-medium">
+            가속/감속/좌/우 · Shift 터보 · <kbd className="bg-white/10 px-1 rounded text-cyan-300">V</kbd> 시점변경
           </p>
         </div>
       </div>
@@ -159,6 +177,18 @@ export default function HUD({
           ))}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              const idx = CAMERA_MODES.indexOf(cameraMode);
+              onToggleCameraMode(CAMERA_MODES[(idx + 1) % CAMERA_MODES.length]);
+            }}
+            className="rounded-xl bg-cyan-500/20 border border-cyan-400/40 shadow-xl px-3 py-2 text-xs text-cyan-200 hover:bg-cyan-500/30 transition-all flex items-center gap-1.5 font-semibold select-none"
+            title="V키 또는 클릭 시 카메라 뷰 시점 4단계 변경 (3인칭 Slow Roads, 탑다운, 스카이, 1인칭)"
+          >
+            <Camera className="h-3.5 w-3.5 text-cyan-300" />
+            {CAMERA_CONFIG[cameraMode].label}
+            <kbd className="text-[9px] bg-white/15 px-1 rounded text-cyan-200 ml-0.5">V</kbd>
+          </button>
           <button
             onClick={() => {
               const currIdx = TERRAIN_LEVELS.findIndex(
