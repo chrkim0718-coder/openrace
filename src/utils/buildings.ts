@@ -19,10 +19,19 @@ export interface RoadSegment {
   width: number; // meters
 }
 
+export interface LandmarkPOI {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  category?: string;
+}
+
 // ── Caching ──────────────────────────────────────────────
 interface CacheEntry {
   buildings: BuildingFeature[];
   roads: RoadSegment[];
+  landmarks: LandmarkPOI[];
   timestamp: number;
 }
 
@@ -62,8 +71,8 @@ function nearbyCellKeys(lat: number, lng: number): string[] {
   const cLat = Math.floor(lat / CELL_SIZE);
   const cLng = Math.floor(lng / CELL_SIZE);
   const keys: string[] = [];
-  for (let dl = -1; dl <= 1; dl++) {
-    for (let dr = -1; dr <= 1; dr++) {
+  for (let dl = -2; dl <= 2; dl++) {
+    for (let dr = -2; dr <= 2; dr++) {
       keys.push(`${cLat + dl},${cLng + dr}`);
     }
   }
@@ -73,12 +82,14 @@ function nearbyCellKeys(lat: number, lng: number): string[] {
 export function getCachedData(
   lat: number,
   lng: number,
-): { buildings: BuildingFeature[]; roads: RoadSegment[] } {
+): { buildings: BuildingFeature[]; roads: RoadSegment[]; landmarks: LandmarkPOI[] } {
   const keys = nearbyCellKeys(lat, lng);
   const buildings: BuildingFeature[] = [];
   const roads: RoadSegment[] = [];
+  const landmarks: LandmarkPOI[] = [];
   const seenB = new Set<string>();
   const seenR = new Set<string>();
+  const seenL = new Set<string>();
   for (const k of keys) {
     const entry = cellCache.get(k);
     if (!entry) continue;
@@ -98,8 +109,14 @@ export function getCachedData(
         roads.push(r);
       }
     }
+    for (const l of entry.landmarks || []) {
+      if (!seenL.has(l.id)) {
+        seenL.add(l.id);
+        landmarks.push(l);
+      }
+    }
   }
-  return { buildings, roads };
+  return { buildings, roads, landmarks };
 }
 
 export function hasCellData(lat: number, lng: number): boolean {
@@ -356,18 +373,23 @@ export function findSafeRoadPosition(
 export async function fetchAreaData(
   lat: number,
   lng: number,
-  radius = 500,
-): Promise<{ buildings: BuildingFeature[]; roads: RoadSegment[] }> {
+  radius = 800,
+): Promise<{ buildings: BuildingFeature[]; roads: RoadSegment[]; landmarks: LandmarkPOI[] }> {
   const key = cellKey(lat, lng);
   const cached = cellCache.get(key);
   if (cached) {
-    return { buildings: cached.buildings, roads: cached.roads };
+    return {
+      buildings: cached.buildings,
+      roads: cached.roads,
+      landmarks: cached.landmarks || [],
+    };
   }
 
   const query = `[out:json][timeout:10];
     (
       way[building](around:${radius},${lat},${lng});
       way[highway](around:${radius},${lat},${lng});
+      node[name](around:${radius},${lat},${lng});
     );
     out geom;`;
 
@@ -401,10 +423,22 @@ export async function fetchAreaData(
 
   const buildings: BuildingFeature[] = [];
   const roads: RoadSegment[] = [];
+  const landmarks: LandmarkPOI[] = [];
 
   for (const el of elements) {
-    if (el.type !== 'way' || !el.geometry || el.geometry.length < 2) continue;
     const tags = el.tags || {};
+    if (el.type === 'node' && tags.name && el.lat && el.lon) {
+      landmarks.push({
+        id: `node-${el.id}`,
+        name: tags.name,
+        lat: el.lat,
+        lng: el.lon,
+        category: tags.tourism || tags.amenity || tags.historic || 'place',
+      });
+      continue;
+    }
+
+    if (el.type !== 'way' || !el.geometry || el.geometry.length < 2) continue;
 
     if (tags['building']) {
       if (el.geometry.length < 3) continue;
@@ -434,6 +468,17 @@ export async function fetchAreaData(
           color,
         },
       });
+
+      // If building has a name, also record as landmark
+      if (tags.name) {
+        landmarks.push({
+          id: `way-${el.id}`,
+          name: tags.name,
+          lat: coords[0][1],
+          lng: coords[0][0],
+          category: 'building',
+        });
+      }
     } else if (tags['highway']) {
       // Road width estimation
       const hwClass = tags['highway'];
@@ -462,11 +507,12 @@ export async function fetchAreaData(
   cellCache.set(key, {
     buildings,
     roads,
+    landmarks,
     timestamp: Date.now(),
   });
   saveCacheToStorage();
 
-  return { buildings, roads };
+  return { buildings, roads, landmarks };
 }
 
 // ── Backward compat: fetchBuildings ───────────────────────

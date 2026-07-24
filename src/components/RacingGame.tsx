@@ -11,6 +11,7 @@ import {
   isPointInsideBuilding,
   findSafeRoadPosition,
 } from '@/utils/buildings';
+import type { LandmarkPOI } from '@/utils/buildings';
 import type { WeatherMode, KeysPressed } from '@/types/game';
 
 const INITIAL = { lat: 37.5665, lng: 126.978, heading: 0 }; // Seoul
@@ -45,6 +46,8 @@ export default function RacingGame() {
   const [mapLoading, setMapLoading] = useState(true);
   const [mapError, setMapError] = useState<string | null>(null);
   const collisionRef = useRef<CollisionData | null>(null);
+  const floatingMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const lastLandmarksRef = useRef<LandmarkPOI[]>([]);
   const [collisionFlash, setCollisionFlash] = useState(0);
 
   const { car, setCar, keysRef, collisionFlashRef } = useCarPhysics(
@@ -357,6 +360,71 @@ export default function RacingGame() {
     }
   }, [showBuildings, ready]);
 
+  // ── 3D Floating Glass Label Markers ─────────────────────────────
+  const updateFloatingMarkers = useCallback(
+    (landmarks: LandmarkPOI[]) => {
+      const map = mapRef.current;
+      // Clear previous floating markers
+      floatingMarkersRef.current.forEach((m) => m.remove());
+      floatingMarkersRef.current = [];
+
+      if (!map || !showLabels) return;
+
+      const unique = new Map<string, LandmarkPOI>();
+
+      // Guaranteed Seoul landmark presets if present
+      const presets: LandmarkPOI[] = [
+        { id: 'p1', name: '🏛️ 경복궁', lat: 37.5759, lng: 126.9768, category: 'preset' },
+        { id: 'p2', name: '🗼 N서울타워', lat: 37.5512, lng: 126.9882, category: 'preset' },
+        { id: 'p3', name: '🏙️ 강남역', lat: 37.4979, lng: 127.0276, category: 'preset' },
+        { id: 'p4', name: '🏢 롯데월드타워', lat: 37.5126, lng: 127.1025, category: 'preset' },
+        { id: 'p5', name: '🌉 여의도63', lat: 37.5202, lng: 126.9248, category: 'preset' },
+        { id: 'p6', name: '🎨 DDP', lat: 37.5665, lng: 127.009, category: 'preset' },
+        { id: 'p7', name: '🛍️ 명동', lat: 37.5636, lng: 126.9837, category: 'preset' },
+        { id: 'p8', name: '🌳 서울숲', lat: 37.5443, lng: 127.0374, category: 'preset' },
+        { id: 'p9', name: '🌉 반포대교', lat: 37.5123, lng: 126.9961, category: 'preset' },
+        { id: 'p10', name: '🏯 북촌한옥마을', lat: 37.5826, lng: 126.9836, category: 'preset' },
+      ];
+
+      for (const p of presets) {
+        unique.set(p.name, p);
+      }
+
+      for (const l of landmarks) {
+        if (!l.name || l.name.trim().length < 2) continue;
+        if (!unique.has(l.name)) {
+          unique.set(l.name, l);
+        }
+        if (unique.size >= 50) break;
+      }
+
+      unique.forEach((poi) => {
+        const el = document.createElement('div');
+        el.className = 'floating-3d-badge-container pointer-events-none group flex flex-col items-center opacity-90 transition-opacity hover:opacity-100';
+        el.innerHTML = `
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-950/45 border border-cyan-400/35 backdrop-blur-md shadow-md text-cyan-200/95 text-[11px] font-medium transition-all duration-300 hover:scale-105 select-none whitespace-nowrap">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-60"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-cyan-400"></span>
+            </span>
+            <span className="tracking-tight drop-shadow-sm">${poi.name}</span>
+          </div>
+          <div className="w-0.5 h-5 bg-gradient-to-b from-cyan-400/60 via-cyan-500/20 to-transparent shadow-sm"></div>
+        `;
+
+        const marker = new maplibregl.Marker({
+          element: el,
+          anchor: 'bottom',
+        })
+          .setLngLat([poi.lng, poi.lat])
+          .addTo(map);
+
+        floatingMarkersRef.current.push(marker);
+      });
+    },
+    [showLabels],
+  );
+
   // toggle place-labels visibility
   useEffect(() => {
     const map = mapRef.current;
@@ -368,7 +436,8 @@ export default function RacingGame() {
         showLabels ? 'visible' : 'none',
       );
     }
-  }, [showLabels, ready]);
+    updateFloatingMarkers(lastLandmarksRef.current);
+  }, [showLabels, ready, updateFloatingMarkers]);
 
   // dynamic 3d terrain scale exaggeration update
   useEffect(() => {
@@ -451,6 +520,9 @@ export default function RacingGame() {
           (src as any)._data = geojson;
         }
 
+        lastLandmarksRef.current = cached.landmarks || [];
+        updateFloatingMarkers(cached.landmarks || []);
+
         // Check if current target position is inside a building and auto-relocate to nearby road if collision is enabled
         if (enableCollision && isPointInsideBuilding(lat, lng, cached.buildings)) {
           const safePos = findSafeRoadPosition(
@@ -475,7 +547,7 @@ export default function RacingGame() {
         console.error('Failed to refresh buildings:', e);
       }
     },
-    [enableCollision, setCar],
+    [enableCollision, setCar, updateFloatingMarkers],
   );
 
   useEffect(() => {
