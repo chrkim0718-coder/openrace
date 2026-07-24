@@ -12,105 +12,105 @@ export const DRIVING_BGM_PLAYLIST: BGMTrack[] = [
     title: 'Jingle Bells Snow Drive',
     artist: 'Holiday Festive',
     genre: '🎄 윈터 캐롤',
-    url: 'https://cdn.pixabay.com/download/audio/2022/11/24/audio_34b39b0368.mp3?filename=jingle-bells-christmas-127733.mp3',
+    url: '/audio/bgm/jingle_bells.wav',
   },
   {
     id: 'merry_christmas_carol',
     title: 'We Wish You a Merry Christmas',
     artist: 'Christmas Magic',
     genre: '🎄 윈터 캐롤',
-    url: 'https://cdn.pixabay.com/download/audio/2022/12/08/audio_6513364fbe.mp3?filename=christmas-magic-129068.mp3',
+    url: '/audio/bgm/merry_christmas.wav',
   },
   {
     id: 'silent_night_lofi',
     title: 'Silent Night Lo-Fi Carol',
     artist: 'Winter Chill Hop',
     genre: '❄️ 캐롤 로파이',
-    url: 'https://cdn.pixabay.com/download/audio/2022/11/28/audio_24e0573981.mp3?filename=lofi-christmas-128224.mp3',
+    url: '/audio/bgm/silent_night.wav',
   },
   {
-    id: 'winter_wonderland',
-    title: 'Winter Wonderland Orchestra',
-    artist: 'Snowy Orchestra',
+    id: 'deck_the_halls',
+    title: 'Deck the Halls Carol',
+    artist: 'Festive Glockenspiel',
     genre: '🎄 윈터 캐롤',
-    url: 'https://cdn.pixabay.com/download/audio/2022/11/15/audio_b2f9c34a17.mp3?filename=christmas-carol-126861.mp3',
+    url: '/audio/bgm/deck_the_halls.wav',
   },
   {
     id: 'synthwave_midnight',
     title: 'Midnight Cyberpunk Drive',
     artist: 'Synthwave Freedom',
     genre: '🌃 Synthwave',
-    url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=synthwave-80s-110045.mp3',
+    url: '/audio/bgm/synthwave_midnight.wav',
   },
   {
     id: 'lofi_sunset',
     title: 'Sunset Highway Chill',
     artist: 'Lo-Fi Coast',
     genre: '☕ Lo-Fi Chill',
-    url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73155.mp3?filename=chill-lofi-song-8444.mp3',
+    url: '/audio/bgm/lofi_sunset.wav',
   },
   {
     id: 'high_octane_racing',
     title: 'High Octane Highway',
     artist: 'Neon Race',
     genre: '⚡ High Octane EDM',
-    url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=action-sport-rock-10338.mp3',
+    url: '/audio/bgm/high_octane.wav',
   },
   {
     id: 'alpine_breeze',
     title: 'Alpine Breeze Acoustic',
     artist: 'Scenic Mountain',
     genre: '🏔️ Acoustic Chill',
-    url: 'https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f792d6.mp3?filename=deep-ambient-124997.mp3',
+    url: '/audio/bgm/alpine_breeze.wav',
   },
   {
     id: 'tokyo_night_drive',
     title: 'Tokyo Night Cruise',
     artist: 'Mid-City Jazz',
     genre: '🎹 Night City Jazz',
-    url: 'https://cdn.pixabay.com/download/audio/2022/11/06/audio_c42f026a79.mp3?filename=night-drive-127116.mp3',
+    url: '/audio/bgm/tokyo_night_jazz.wav',
   },
   {
     id: 'tropical_beach_pop',
     title: 'Tropical Beach Highway',
     artist: 'Summer Breeze',
     genre: '🌊 Tropical EDM',
-    url: 'https://cdn.pixabay.com/download/audio/2022/08/02/audio_884b9c6302.mp3?filename=summer-chill-pop-117215.mp3',
+    url: '/audio/bgm/tropical_beach.wav',
   },
   {
     id: 'neon_tokyo_drift',
     title: 'Neon Cyberpunk Drift',
     artist: 'Future Bass 15',
     genre: '🏎️ Cyberpunk Beat',
-    url: 'https://cdn.pixabay.com/download/audio/2022/03/10/audio_510d9f481c.mp3?filename=future-bass-15-10023.mp3',
+    url: '/audio/bgm/neon_tokyo_drift.wav',
   },
   {
     id: 'space_synth',
     title: 'Deep Space Synthwave',
     artist: 'Arcadia Retro',
     genre: '🌌 Space Synth',
-    url: 'https://cdn.pixabay.com/download/audio/2022/04/27/audio_6a30c5e317.mp3?filename=retro-synthwave-108754.mp3',
+    url: '/audio/bgm/space_synth.wav',
   },
   {
     id: 'night_city_sax',
     title: 'Smooth Night Lounge Sax',
     artist: 'Urban Jazz Ensemble',
     genre: '🎷 Urban Jazz',
-    url: 'https://cdn.pixabay.com/download/audio/2022/05/16/audio_db6f7b1548.mp3?filename=jazz-lounge-112544.mp3',
+    url: '/audio/bgm/night_city_sax.wav',
   },
   {
     id: 'sunset_coast_rock',
     title: 'Sunset Coast Acoustic Rock',
     artist: 'Pacific Guitars',
     genre: '🎸 Coast Rock',
-    url: 'https://cdn.pixabay.com/download/audio/2022/01/26/audio_d0c6af3823.mp3?filename=acoustic-guitars-10497.mp3',
+    url: '/audio/bgm/sunset_coast_rock.wav',
   },
   {
     id: 'rainy_day_lofi',
     title: 'Rainy Day Lo-Fi Beats',
     artist: 'Midnight Rain',
     genre: '🌧️ Rainy Lo-Fi',
-    url: 'https://cdn.pixabay.com/download/audio/2022/02/10/audio_fc86ec6211.mp3?filename=lofi-study-112191.mp3',
+    url: '/audio/bgm/rainy_day_lofi.wav',
   },
 ];
 
@@ -164,7 +164,7 @@ class MusicPlayer {
   public play() {
     if (!this.audio) return;
     const track = this.getCurrentTrack();
-    if (this.audio.src !== track.url) {
+    if (this.audio.src !== track.url && !this.audio.src.endsWith(track.url)) {
       this.audio.src = track.url;
     }
     this.audio
