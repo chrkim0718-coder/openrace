@@ -5,6 +5,7 @@ import { useCarPhysics } from '@/hooks/useCarPhysics';
 import type { CollisionData } from '@/hooks/useCarPhysics';
 import SearchPanel from '@/components/SearchPanel';
 import HUD, { CameraMode, CAMERA_CONFIG, CAMERA_MODES } from '@/components/HUD';
+import RadioPlayer from '@/components/RadioPlayer';
 import {
   fetchAreaData,
   getCachedData,
@@ -907,6 +908,7 @@ export default function RacingGame() {
             onToggleMute={handleToggleMute}
             onReset={handleReset}
           />
+          <RadioPlayer />
         </>
       )}
 
