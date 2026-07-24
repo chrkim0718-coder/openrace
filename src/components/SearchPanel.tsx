@@ -106,22 +106,33 @@ export default function SearchPanel({ onTeleport, currentLabel }: Props) {
           </div>
         )}
 
-        {/* Quick location presets */}
-        <div className="flex items-center gap-1.5 px-3 py-2 border-t border-white/10 overflow-x-auto scrollbar-none">
-          {[
-            { name: '🏙️ 서울', lat: 37.5665, lng: 126.978 },
-            { name: '🏔️ 남산', lat: 37.5512, lng: 126.9882 },
-            { name: '🌋 한라산', lat: 33.3617, lng: 126.5332 },
-            { name: '🗻 후지산', lat: 35.3606, lng: 138.7274 },
-          ].map((preset, idx) => (
-            <button
-              key={idx}
-              onClick={() => onTeleport(preset.lat, preset.lng, preset.name)}
-              className="px-2 py-1 rounded-lg bg-white/5 hover:bg-cyan-500/20 hover:border-cyan-500/40 border border-white/10 text-[11px] text-slate-300 hover:text-cyan-300 transition-all shrink-0 select-none"
-            >
-              {preset.name}
-            </button>
-          ))}
+        {/* Seoul Landmark presets */}
+        <div className="px-3 py-2 border-t border-white/10">
+          <p className="text-[10px] font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+            서울 주요 명소
+          </p>
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1">
+            {[
+              { name: '🏛️ 경복궁', lat: 37.5759, lng: 126.9768 },
+              { name: '🗼 N서울타워', lat: 37.5512, lng: 126.9882 },
+              { name: '🏙️ 강남역', lat: 37.4979, lng: 127.0276 },
+              { name: '🏢 롯데월드타워', lat: 37.5126, lng: 127.1025 },
+              { name: '🌉 여의도63', lat: 37.5202, lng: 126.9248 },
+              { name: '🎨 DDP', lat: 37.5665, lng: 127.0092 },
+              { name: '🛍️ 명동', lat: 37.5636, lng: 126.9849 },
+              { name: '🌳 서울숲', lat: 37.5447, lng: 127.0378 },
+              { name: '🌊 반포대교', lat: 37.5134, lng: 126.9961 },
+              { name: '⛩️ 북촌한옥마을', lat: 37.5826, lng: 126.9837 },
+            ].map((preset, idx) => (
+              <button
+                key={idx}
+                onClick={() => onTeleport(preset.lat, preset.lng, preset.name)}
+                className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-cyan-500/25 hover:border-cyan-400/50 border border-white/10 text-xs text-slate-200 hover:text-white font-medium transition-all shrink-0 select-none active:scale-95"
+              >
+                {preset.name}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5 px-3 py-2 border-t border-white/10 bg-slate-950/40">
