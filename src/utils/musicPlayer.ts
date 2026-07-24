@@ -8,6 +8,55 @@ export interface BGMTrack {
 
 export const DRIVING_BGM_PLAYLIST: BGMTrack[] = [
   {
+    id: 'synthwave_80s',
+    title: 'Midnight Cyberpunk Drive (80s Synthwave)',
+    artist: 'Synthwave Freedom',
+    genre: '🌃 Synthwave',
+    url: '/audio/bgm/synthwave_80s.mp3',
+  },
+  {
+    id: 'mellow_lofi',
+    title: 'Soft Midnight Lo-Fi (말랑한 힐링 로파이)',
+    artist: 'Lo-Fi Chillers',
+    genre: '☕ Lo-Fi Chill',
+    url: '/audio/bgm/mellow_lofi.mp3',
+  },
+  {
+    id: 'retro_synth_breeze',
+    title: 'Retro Sunset Synthwave (말랑한 노을 신스)',
+    artist: 'Synthwave Lounge',
+    genre: '🌃 Synthwave',
+    url: '/audio/bgm/retro_synth_breeze.mp3',
+  },
+  {
+    id: 'smooth_jazz_lounge',
+    title: 'Sweet Night Sax Lounge (말랑한 감성 재즈)',
+    artist: 'Incompetech Jazz',
+    genre: '🎷 릴랙싱 재즈',
+    url: '/audio/bgm/smooth_jazz_lounge.mp3',
+  },
+  {
+    id: 'acoustic_warmth',
+    title: 'Warm Acoustic Highway (말랑한 어쿠스틱)',
+    artist: 'Acoustic Band',
+    genre: '🎸 어쿠스틱',
+    url: '/audio/bgm/acoustic_warmth.mp3',
+  },
+  {
+    id: 'high_octane',
+    title: 'High Octane Highway (EDM Drive)',
+    artist: 'Neon Race',
+    genre: '⚡ High Octane EDM',
+    url: '/audio/bgm/high_octane.mp3',
+  },
+  {
+    id: 'funk_game_loop_real',
+    title: 'Funky Urban Highway (실제 베이스 & 펑크)',
+    artist: 'Kevin MacLeod (Incompetech)',
+    genre: '🕺 시티 펑크',
+    url: '/audio/bgm/funk_game_loop.mp3',
+  },
+  {
     id: 'jingle_bells_real',
     title: 'Jingle Bells (오케스트라 실제 연주)',
     artist: 'Kevin MacLeod (Incompetech)',
@@ -41,41 +90,6 @@ export const DRIVING_BGM_PLAYLIST: BGMTrack[] = [
     artist: 'Holiday Symphony',
     genre: '🎄 윈터 캐롤',
     url: '/audio/bgm/joy_to_the_world.mp3',
-  },
-  {
-    id: 'carefree_drive_real',
-    title: 'Carefree Highway Drive (어쿠스틱 기타 라이브)',
-    artist: 'Kevin MacLeod (Incompetech)',
-    genre: '🎸 어쿠스틱 드라이브',
-    url: '/audio/bgm/carefree_drive.mp3',
-  },
-  {
-    id: 'jazz_lounge_real',
-    title: 'Midnight City Jazz (실제 재즈 콰르텟 연주)',
-    artist: 'Kevin MacLeod (Incompetech)',
-    genre: '🎷 릴랙싱 재즈',
-    url: '/audio/bgm/jazz_lounge.mp3',
-  },
-  {
-    id: 'chillwave_drive_real',
-    title: 'Sunset Drive Synthwave (스튜디오 어반)',
-    artist: 'Kevin MacLeod (Incompetech)',
-    genre: '🌃 Synthwave',
-    url: '/audio/bgm/chillwave_drive.mp3',
-  },
-  {
-    id: 'funk_game_loop_real',
-    title: 'Funky Urban Highway (실제 베이스 & 펑크)',
-    artist: 'Kevin MacLeod (Incompetech)',
-    genre: '🕺 시티 펑크',
-    url: '/audio/bgm/funk_game_loop.mp3',
-  },
-  {
-    id: 'synthwave_viper_real',
-    title: 'Viper Cyberpunk Highway (실제 신스웨이브)',
-    artist: 'MDN Sound',
-    genre: '🏎️ Cyberpunk Beat',
-    url: '/audio/bgm/synthwave_viper.mp3',
   },
 ];
 
