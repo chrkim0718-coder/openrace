@@ -38,7 +38,7 @@ export default function RacingGame() {
   const [weather, setWeather] = useState<WeatherMode>('day');
   const [showBuildings, setShowBuildings] = useState(false);
   const [enableCollision, setEnableCollision] = useState(false);
-  const [terrainScale, setTerrainScale] = useState(1.9);
+  const [terrainScale, setTerrainScale] = useState(1.0);
   const [locationLabel, setLocationLabel] = useState('서울');
   const [ready, setReady] = useState(false);
   const [mapLoading, setMapLoading] = useState(true);
@@ -119,7 +119,7 @@ export default function RacingGame() {
       try {
         map.setTerrain({
           source: 'terrain-dem',
-          exaggeration: 1.9,
+          exaggeration: 1.0,
         });
       } catch (err) {
         console.warn('3D Terrain setTerrain error:', err);
