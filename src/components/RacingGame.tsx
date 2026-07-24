@@ -445,21 +445,56 @@ export default function RacingGame() {
   );
 
   const handleReset = useCallback(() => {
+    const currentLat = car.lat;
+    const currentLng = car.lng;
+
+    const cached = getCachedData(currentLat, currentLng);
+    let targetLat = currentLat;
+    let targetLng = currentLng;
+
+    if (cached.roads && cached.roads.length > 0) {
+      const safePos = findSafeRoadPosition(
+        currentLat,
+        currentLng,
+        cached.buildings,
+        cached.roads,
+      );
+      if (safePos) {
+        targetLat = safePos.lat;
+        targetLng = safePos.lng;
+      }
+    } else {
+      const initCached = getCachedData(INITIAL.lat, INITIAL.lng);
+      const safePos = findSafeRoadPosition(
+        INITIAL.lat,
+        INITIAL.lng,
+        initCached.buildings,
+        initCached.roads,
+      );
+      if (safePos) {
+        targetLat = safePos.lat;
+        targetLng = safePos.lng;
+      } else {
+        targetLat = INITIAL.lat;
+        targetLng = INITIAL.lng;
+      }
+    }
+
     setCar((c) => ({
       ...c,
-      lat: INITIAL.lat,
-      lng: INITIAL.lng,
-      heading: INITIAL.heading,
+      lat: targetLat,
+      lng: targetLng,
+      heading: 0,
       speed: 0,
       steerAngle: 0,
     }));
-    setLocationLabel('서울');
+
     mapRef.current?.jumpTo({
-      center: [INITIAL.lng, INITIAL.lat],
+      center: [targetLng, targetLat],
       bearing: 0,
-      zoom: 17,
+      pitch: 62,
     });
-  }, [setCar]);
+  }, [car.lat, car.lng, setCar]);
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-slate-950">
