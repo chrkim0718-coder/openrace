@@ -8,109 +8,74 @@ export interface BGMTrack {
 
 export const DRIVING_BGM_PLAYLIST: BGMTrack[] = [
   {
-    id: 'jingle_bells_snow',
-    title: 'Jingle Bells Snow Drive',
-    artist: 'Holiday Festive',
+    id: 'jingle_bells_real',
+    title: 'Jingle Bells (오케스트라 실제 연주)',
+    artist: 'Kevin MacLeod (Incompetech)',
     genre: '🎄 윈터 캐롤',
-    url: '/audio/bgm/jingle_bells.wav',
+    url: '/audio/bgm/jingle_bells_real.mp3',
   },
   {
-    id: 'merry_christmas_carol',
-    title: 'We Wish You a Merry Christmas',
-    artist: 'Christmas Magic',
+    id: 'wish_background',
+    title: 'We Wish You a Merry Christmas (스튜디오 캐롤)',
+    artist: 'Kevin MacLeod (Incompetech)',
     genre: '🎄 윈터 캐롤',
-    url: '/audio/bgm/merry_christmas.wav',
+    url: '/audio/bgm/wish_background.mp3',
   },
   {
-    id: 'silent_night_lofi',
-    title: 'Silent Night Lo-Fi Carol',
-    artist: 'Winter Chill Hop',
-    genre: '❄️ 캐롤 로파이',
-    url: '/audio/bgm/silent_night.wav',
+    id: 'silent_night_real',
+    title: 'Silent Night (실제 피아노 연주)',
+    artist: 'Kevin MacLeod (Incompetech)',
+    genre: '❄️ 캐롤 피아노',
+    url: '/audio/bgm/silent_night.mp3',
   },
   {
-    id: 'deck_the_halls',
-    title: 'Deck the Halls Carol',
-    artist: 'Festive Glockenspiel',
+    id: 'deck_the_halls_real',
+    title: 'Deck the Halls (윈터 브라스 연주)',
+    artist: 'Kevin MacLeod (Incompetech)',
+    genre: '🎄 윈터 브라스',
+    url: '/audio/bgm/deck_the_halls.mp3',
+  },
+  {
+    id: 'joy_to_the_world_real',
+    title: 'Joy To The World (윈터 오케스트라)',
+    artist: 'Holiday Symphony',
     genre: '🎄 윈터 캐롤',
-    url: '/audio/bgm/deck_the_halls.wav',
+    url: '/audio/bgm/joy_to_the_world.mp3',
   },
   {
-    id: 'synthwave_midnight',
-    title: 'Midnight Cyberpunk Drive',
-    artist: 'Synthwave Freedom',
+    id: 'carefree_drive_real',
+    title: 'Carefree Highway Drive (어쿠스틱 기타 라이브)',
+    artist: 'Kevin MacLeod (Incompetech)',
+    genre: '🎸 어쿠스틱 드라이브',
+    url: '/audio/bgm/carefree_drive.mp3',
+  },
+  {
+    id: 'jazz_lounge_real',
+    title: 'Midnight City Jazz (실제 재즈 콰르텟 연주)',
+    artist: 'Kevin MacLeod (Incompetech)',
+    genre: '🎷 릴랙싱 재즈',
+    url: '/audio/bgm/jazz_lounge.mp3',
+  },
+  {
+    id: 'chillwave_drive_real',
+    title: 'Sunset Drive Synthwave (스튜디오 어반)',
+    artist: 'Kevin MacLeod (Incompetech)',
     genre: '🌃 Synthwave',
-    url: '/audio/bgm/synthwave_midnight.wav',
+    url: '/audio/bgm/chillwave_drive.mp3',
   },
   {
-    id: 'lofi_sunset',
-    title: 'Sunset Highway Chill',
-    artist: 'Lo-Fi Coast',
-    genre: '☕ Lo-Fi Chill',
-    url: '/audio/bgm/lofi_sunset.wav',
+    id: 'funk_game_loop_real',
+    title: 'Funky Urban Highway (실제 베이스 & 펑크)',
+    artist: 'Kevin MacLeod (Incompetech)',
+    genre: '🕺 시티 펑크',
+    url: '/audio/bgm/funk_game_loop.mp3',
   },
   {
-    id: 'high_octane_racing',
-    title: 'High Octane Highway',
-    artist: 'Neon Race',
-    genre: '⚡ High Octane EDM',
-    url: '/audio/bgm/high_octane.wav',
-  },
-  {
-    id: 'alpine_breeze',
-    title: 'Alpine Breeze Acoustic',
-    artist: 'Scenic Mountain',
-    genre: '🏔️ Acoustic Chill',
-    url: '/audio/bgm/alpine_breeze.wav',
-  },
-  {
-    id: 'tokyo_night_drive',
-    title: 'Tokyo Night Cruise',
-    artist: 'Mid-City Jazz',
-    genre: '🎹 Night City Jazz',
-    url: '/audio/bgm/tokyo_night_jazz.wav',
-  },
-  {
-    id: 'tropical_beach_pop',
-    title: 'Tropical Beach Highway',
-    artist: 'Summer Breeze',
-    genre: '🌊 Tropical EDM',
-    url: '/audio/bgm/tropical_beach.wav',
-  },
-  {
-    id: 'neon_tokyo_drift',
-    title: 'Neon Cyberpunk Drift',
-    artist: 'Future Bass 15',
+    id: 'synthwave_viper_real',
+    title: 'Viper Cyberpunk Highway (실제 신스웨이브)',
+    artist: 'MDN Sound',
     genre: '🏎️ Cyberpunk Beat',
-    url: '/audio/bgm/neon_tokyo_drift.wav',
-  },
-  {
-    id: 'space_synth',
-    title: 'Deep Space Synthwave',
-    artist: 'Arcadia Retro',
-    genre: '🌌 Space Synth',
-    url: '/audio/bgm/space_synth.wav',
-  },
-  {
-    id: 'night_city_sax',
-    title: 'Smooth Night Lounge Sax',
-    artist: 'Urban Jazz Ensemble',
-    genre: '🎷 Urban Jazz',
-    url: '/audio/bgm/night_city_sax.wav',
-  },
-  {
-    id: 'sunset_coast_rock',
-    title: 'Sunset Coast Acoustic Rock',
-    artist: 'Pacific Guitars',
-    genre: '🎸 Coast Rock',
-    url: '/audio/bgm/sunset_coast_rock.wav',
-  },
-  {
-    id: 'rainy_day_lofi',
-    title: 'Rainy Day Lo-Fi Beats',
-    artist: 'Midnight Rain',
-    genre: '🌧️ Rainy Lo-Fi',
-    url: '/audio/bgm/rainy_day_lofi.wav',
+    url: '/audio/bgm/synthwave_viper.mp3',
   },
 ];
 
@@ -131,8 +96,8 @@ class MusicPlayer {
         this.nextTrack();
       });
 
-      this.audio.addEventListener('error', () => {
-        console.warn('BGM track error, switching to next track');
+      this.audio.addEventListener('error', (e) => {
+        console.warn('BGM track error, switching to next track', e);
         this.nextTrack();
       });
     }
