@@ -1,0 +1,155 @@
+import { Gauge, MapPin, Sparkles } from 'lucide-react';
+import type { CarState, WeatherMode } from '@/types/game';
+
+interface Props {
+  car: CarState;
+  locationLabel: string;
+  weather: WeatherMode;
+  onWeatherChange: (w: WeatherMode) => void;
+  onReset: () => void;
+}
+
+const WEATHERS: { id: WeatherMode; label: string; icon: string }[] = [
+  { id: 'day', label: '맑음', icon: '☀' },
+  { id: 'night', label: '밤', icon: '☾' },
+  { id: 'rain', label: '비', icon: '☂' },
+  { id: 'snow', label: '눈', icon: '❄' },
+];
+
+export default function HUD({
+  car,
+  locationLabel,
+  weather,
+  onWeatherChange,
+  onReset,
+}: Props) {
+  const speed = Math.abs(Math.round(car.speed));
+  const gear = car.speed >= 0 ? 'D' : 'R';
+
+  return (
+    <>
+      {/* Speedometer */}
+      <div className="absolute bottom-4 left-4 z-50">
+        <div className="rounded-2xl bg-slate-900/85 backdrop-blur-xl border border-white/10 shadow-2xl px-5 py-3 flex items-center gap-4">
+          <div className="flex flex-col items-center">
+            <div className="flex items-baseline gap-1">
+              <span className="text-4xl font-bold text-white tabular-nums leading-none">
+                {speed}
+              </span>
+              <span className="text-xs text-slate-400">km/h</span>
+            </div>
+            <div className="mt-1 flex items-center gap-2">
+              <span
+                className={`text-xs font-bold px-1.5 py-0.5 rounded ${
+                  gear === 'D'
+                    ? 'bg-cyan-500/30 text-cyan-300'
+                    : 'bg-amber-500/30 text-amber-300'
+                }`}
+              >
+                {gear}
+              </span>
+              {/* speed bar */}
+              <div className="w-24 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-150"
+                  style={{
+                    width: `${(speed / 340) * 100}%`,
+                    background:
+                      speed > 220
+                        ? 'linear-gradient(90deg,#f43f5e,#fb923c)'
+                        : speed > 160
+                          ? 'linear-gradient(90deg,#22d3ee,#f43f5e)'
+                          : 'linear-gradient(90deg,#22d3ee,#a3e635)',
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+          {/* Turbo indicator */}
+          <div
+            className={`flex flex-col items-center justify-center px-2 py-1 rounded-lg transition-all duration-200 ${
+              car.turbo
+                ? 'bg-orange-500/30 border border-orange-400/50 scale-105'
+                : 'bg-slate-800/50 border border-slate-700/50'
+            }`}
+          >
+            <span
+              className={`text-lg font-black tracking-tight ${
+                car.turbo ? 'text-orange-400' : 'text-slate-600'
+              }`}
+            >
+              TURBO
+            </span>
+            <span
+              className={`text-[9px] ${
+                car.turbo ? 'text-orange-300/80' : 'text-slate-600'
+              }`}
+            >
+              Shift
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Controls hint */}
+      <div className="absolute bottom-4 right-4 z-50">
+        <div className="rounded-2xl bg-slate-900/85 backdrop-blur-xl border border-white/10 shadow-2xl px-4 py-3">
+          <div className="grid grid-cols-3 gap-1 text-center mb-2">
+            <div></div>
+            <kbd className="text-[10px] text-slate-300 bg-white/10 rounded px-1.5 py-1">
+              W / ↑
+            </kbd>
+            <div></div>
+            <kbd className="text-[10px] text-slate-300 bg-white/10 rounded px-1.5 py-1">
+              A / ←
+            </kbd>
+            <kbd className="text-[10px] text-slate-300 bg-white/10 rounded px-1.5 py-1">
+              S / ↓
+            </kbd>
+            <kbd className="text-[10px] text-slate-300 bg-white/10 rounded px-1.5 py-1">
+              D / →
+            </kbd>
+          </div>
+          <p className="text-[10px] text-slate-500 text-center">
+            가속/감속/좌/우 · Shift 터보
+          </p>
+        </div>
+      </div>
+
+      {/* Weather + reset */}
+      <div className="absolute top-4 right-4 z-50 flex flex-col gap-2 items-end">
+        <div className="rounded-2xl bg-slate-900/85 backdrop-blur-xl border border-white/10 shadow-2xl p-1.5 flex gap-1">
+          {WEATHERS.map((w) => (
+            <button
+              key={w.id}
+              onClick={() => onWeatherChange(w.id)}
+              title={w.label}
+              className={`px-2.5 py-1.5 rounded-lg text-sm transition-all ${
+                weather === w.id
+                  ? 'bg-cyan-500/30 text-cyan-300 scale-105'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              {w.icon}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={onReset}
+          className="rounded-xl bg-slate-900/85 backdrop-blur-xl border border-white/10 shadow-xl px-3 py-2 text-xs text-slate-300 hover:text-white hover:bg-white/5 transition-all flex items-center gap-1.5"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          리셋
+        </button>
+      </div>
+
+      {/* Location chip */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 max-w-md w-full px-4 pointer-events-none">
+        <div className="rounded-full bg-slate-900/75 backdrop-blur-md border border-white/10 shadow-lg px-4 py-1.5 flex items-center justify-center gap-1.5">
+          <MapPin className="h-3 w-3 text-cyan-400 shrink-0" />
+          <span className="text-xs text-slate-200 truncate">{locationLabel}</span>
+        </div>
+      </div>
+    </>
+  );
+}
