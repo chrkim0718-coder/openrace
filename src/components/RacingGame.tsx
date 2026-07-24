@@ -58,18 +58,20 @@ export default function RacingGame() {
       style: {
         version: 8,
         sources: {
-          osm: {
+          satellite: {
             type: 'raster',
-            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tiles: [
+              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            ],
             tileSize: 256,
-            attribution: '© OpenStreetMap contributors',
+            attribution: '© Esri Satellite',
           },
         },
         layers: [
           {
-            id: 'osm-tiles',
+            id: 'satellite-tiles',
             type: 'raster',
-            source: 'osm',
+            source: 'satellite',
             minzoom: 0,
             maxzoom: 19,
           },
@@ -113,7 +115,7 @@ export default function RacingGame() {
       try {
         map.setTerrain({
           source: 'terrain-dem',
-          exaggeration: 3.8,
+          exaggeration: 1.9,
         });
       } catch (err) {
         console.warn('3D Terrain setTerrain error:', err);
@@ -127,12 +129,12 @@ export default function RacingGame() {
             type: 'hillshade',
             source: 'terrain-dem',
             paint: {
-              'hillshade-exaggeration': 0.8,
+              'hillshade-exaggeration': 0.5,
               'hillshade-shadow-color': '#090d16',
               'hillshade-highlight-color': '#ffffff',
             },
           },
-          'osm-tiles',
+          'satellite-tiles',
         );
       }
 
