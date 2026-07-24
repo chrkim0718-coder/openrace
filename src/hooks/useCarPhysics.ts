@@ -30,6 +30,8 @@ export function useCarPhysics(
   active: boolean,
   collisionRef?: React.MutableRefObject<CollisionData | null>,
   enableCollision: boolean = true,
+  isShowcaseMode: boolean = false,
+  showcaseSpeedTarget: number = 40,
 ) {
   const [car, setCar] = useState<CarState>({
     lat: initial.lat,
@@ -71,36 +73,50 @@ export function useCarPhysics(
       setCar((prev) => {
         const k = keysRef.current;
         let speed = prev.speed;
+        let steer = prev.steerAngle;
 
         const turboActive = k.turbo && k.forward && speed >= 0;
         const maxSpeed = turboActive ? TURBO_SPEED : MAX_SPEED;
         const accel = turboActive ? TURBO_ACCEL : ACCEL;
 
-        if (k.forward) speed += accel * dt;
-        else if (k.backward) speed -= ACCEL * dt * 1.5;
-        else {
-          if (speed > 0) speed = Math.max(0, speed - FRICTION * dt);
-          else if (speed < 0) speed = Math.min(0, speed + FRICTION * dt);
-        }
+        if (isShowcaseMode) {
+          // Smooth cruise speed control in showcase mode (calm and steady)
+          if (speed < showcaseSpeedTarget) {
+            speed = Math.min(showcaseSpeedTarget, speed + ACCEL * dt * 0.3);
+          } else if (speed > showcaseSpeedTarget) {
+            speed = Math.max(showcaseSpeedTarget, speed - BRAKE * dt * 0.4);
+          }
 
-        speed = Math.max(MIN_SPEED, Math.min(maxSpeed, speed));
-
-        if (k.backward && speed > 0) speed = Math.max(0, speed - BRAKE * dt);
-        if (k.forward && speed < 0) speed = Math.min(0, speed + BRAKE * dt);
-
-        // steering
-        let steer = prev.steerAngle;
-        const speedFactor = Math.min(1, Math.abs(speed) / 25);
-        const steerInput = (k.right ? 1 : 0) - (k.left ? 1 : 0);
-
-        if (steerInput !== 0) {
-          steer += steerInput * STEER_RETURN * dt;
-          steer = Math.max(-1, Math.min(1, steer));
+          // Ultra gentle long-wave curve steering without any sharp dizzying turns
+          const nowSec = performance.now() / 1000;
+          const targetSteer = Math.sin(nowSec * 0.15) * 0.12;
+          steer += (targetSteer - steer) * Math.min(1, 2 * dt);
         } else {
-          if (steer > 0) steer = Math.max(0, steer - STEER_RETURN * dt * 2);
-          else if (steer < 0) steer = Math.min(0, steer + STEER_RETURN * dt * 2);
+          // Manual driving controls
+          if (k.forward) speed += accel * dt;
+          else if (k.backward) speed -= ACCEL * dt * 1.5;
+          else {
+            if (speed > 0) speed = Math.max(0, speed - FRICTION * dt);
+            else if (speed < 0) speed = Math.min(0, speed + FRICTION * dt);
+          }
+
+          speed = Math.max(MIN_SPEED, Math.min(maxSpeed, speed));
+
+          if (k.backward && speed > 0) speed = Math.max(0, speed - BRAKE * dt);
+          if (k.forward && speed < 0) speed = Math.min(0, speed + BRAKE * dt);
+
+          // Manual steering
+          const steerInput = (k.right ? 1 : 0) - (k.left ? 1 : 0);
+          if (steerInput !== 0) {
+            steer += steerInput * STEER_RETURN * dt;
+            steer = Math.max(-1, Math.min(1, steer));
+          } else {
+            if (steer > 0) steer = Math.max(0, steer - STEER_RETURN * dt * 2);
+            else if (steer < 0) steer = Math.min(0, steer + STEER_RETURN * dt * 2);
+          }
         }
 
+        const speedFactor = Math.min(1, Math.abs(speed) / 25);
         let heading = prev.heading;
         if (speedFactor > 0.01) {
           heading += steer * STEER_RATE * dt * speedFactor * (speed >= 0 ? 1 : -1);

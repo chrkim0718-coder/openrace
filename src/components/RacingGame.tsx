@@ -62,12 +62,30 @@ export default function RacingGame() {
   const lastLandmarksRef = useRef<LandmarkPOI[]>([]);
   const [collisionFlash, setCollisionFlash] = useState(0);
 
-  const { car, setCar, keysRef, collisionFlashRef } = useCarPhysics(
+  // Showcase & Spectator Ambient Mode State
+  const [isShowcaseMode, setIsShowcaseMode] = useState<boolean>(false);
+  const [showcaseIndex, setShowcaseIndex] = useState<number>(0);
+  const [showcaseTimer, setShowcaseTimer] = useState<number>(60);
+  const [showcaseSpeed, setShowcaseSpeed] = useState<number>(50); // 50 km/h smooth cruise speed
+  const [showcasePaused, setShowcasePaused] = useState<boolean>(false);
+  const [autoCameraSwitch, setAutoCameraSwitch] = useState<boolean>(true); // Auto cycle camera angles
+  const [isCinematicLetterbox, setIsCinematicLetterbox] = useState<boolean>(false);
+
+  const { car, setCar, keysRef, collisionFlashRef: physCollisionFlashRef } = useCarPhysics(
     INITIAL,
     active,
     collisionRef,
     enableCollision,
+    isShowcaseMode,
+    showcaseSpeed,
   );
+
+  // Camera state for smooth exponential lerping
+  const cameraStateRef = useRef({
+    lat: INITIAL.lat,
+    lng: INITIAL.lng,
+    bearing: INITIAL.heading,
+  });
 
   // init map
   useEffect(() => {
@@ -249,64 +267,33 @@ export default function RacingGame() {
         if (buildings.length > 0) {
           const src = map.getSource('buildings') as maplibregl.GeoJSONSource | undefined;
           if (src) {
-            const geojson = { type: 'FeatureCollection', features: buildings };
-            src.setData(geojson as any);
-            (src as any)._data = geojson;
+            src.setData({ type: 'FeatureCollection', features: buildings });
           }
         }
-        // Set initial collision data
         collisionRef.current = { buildings, roads };
-        lastFetchCellRef.current = `${Math.floor(INITIAL.lat / 0.008)},${Math.floor(INITIAL.lng / 0.008)}`;
-      } catch (e) {
-        console.error('Failed to load buildings:', e);
+      } catch (err) {
+        console.warn('Initial buildings fetch failed:', err);
       }
 
-      // car marker element
+      // Store initial marker
       const el = document.createElement('div');
-      el.style.cssText = `
-        width: 36px; height: 60px;
-        will-change: transform;
-        transition: none;
-      `;
+      el.className = 'car-marker';
       el.innerHTML = `
-        <svg width="36" height="60" viewBox="0 0 36 60" style="display:block;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.5))">
-          <defs>
-            <linearGradient id="cbody" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#f97316"/>
-              <stop offset="0.5" stop-color="#ea580c"/>
-              <stop offset="1" stop-color="#c2410c"/>
-            </linearGradient>
-            <linearGradient id="cwind" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#1e293b"/>
-              <stop offset="1" stop-color="#334155"/>
-            </linearGradient>
-          </defs>
-          <!-- rear -->
-          <rect x="6" y="44" width="24" height="12" rx="4" fill="url(#cbody)"/>
-          <!-- body -->
-          <path d="M8 14 L8 50 L28 50 L28 14 Q28 6 18 6 Q8 6 8 14 Z" fill="url(#cbody)"/>
-          <!-- windshield -->
-          <path d="M11 14 L11 28 L25 28 L25 14 Q25 9 18 9 Q11 9 11 14 Z" fill="url(#cwind)" opacity="0.85"/>
-          <!-- roof line -->
-          <rect x="11" y="28" width="14" height="10" fill="#0f172a" opacity="0.3"/>
-          <!-- headlights -->
-          <rect x="9" y="8" width="4" height="3" rx="1" fill="#fef3c7"/>
-          <rect x="23" y="8" width="4" height="3" rx="1" fill="#fef3c7"/>
-          <!-- taillights -->
-          <rect x="9" y="51" width="4" height="3" rx="1" fill="#ef4444"/>
-          <rect x="23" y="51" width="4" height="3" rx="1" fill="#ef4444"/>
-          <!-- wheels -->
+        <svg width="36" height="52" viewBox="0 0 36 52" fill="none">
+          <rect x="3" y="1" width="30" height="50" rx="8" fill="#0284c7" stroke="#000000" stroke-width="1.5"/>
+          <rect x="6" y="10" width="24" height="14" rx="4" fill="#38bdf8" opacity="0.9"/>
+          <rect x="6" y="30" width="24" height="12" rx="3" fill="#1e293b"/>
+          <circle cx="9" cy="4" r="2.5" fill="#fef08a"/>
+          <circle cx="27" cy="4" r="2.5" fill="#fef08a"/>
           <rect x="4" y="16" width="4" height="8" rx="1.5" fill="#1a1a1a"/>
           <rect x="28" y="16" width="4" height="8" rx="1.5" fill="#1a1a1a"/>
           <rect x="4" y="40" width="4" height="8" rx="1.5" fill="#1a1a1a"/>
           <rect x="28" y="40" width="4" height="8" rx="1.5" fill="#1a1a1a"/>
         </svg>
       `;
-      // front wheels for steer visual
       const wheelL = el.querySelector('rect:nth-of-type(3)') as SVGRectElement | null;
       const wheelR = el.querySelector('rect:nth-of-type(4)') as SVGRectElement | null;
 
-      // store refs on element
       (el as any)._wheelL = wheelL;
       (el as any)._wheelR = wheelR;
 
@@ -332,37 +319,53 @@ export default function RacingGame() {
     };
   }, []);
 
-  // sync car -> map
+  // Smooth camera following sync with damped exponential interpolation
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
 
     const marker = (map as any)._marker;
-    if (!marker) return;
+    if (marker) {
+      marker.setLngLat([car.lng, car.lat]);
+      marker.setRotation(car.heading);
 
-    marker.setLngLat([car.lng, car.lat]);
-    marker.setRotation(car.heading);
-
-    // steer wheels visual
-    const el = markerRef.current;
-    if (el) {
-      const wL = (el as any)._wheelL as SVGRectElement | null;
-      const wR = (el as any)._wheelR as SVGRectElement | null;
-      const steerDeg = car.steerAngle * 30;
-      [wL, wR].forEach((w) => {
-        if (w) w.setAttribute('transform', `rotate(${steerDeg} 6 20)`);
-      });
+      const el = markerRef.current;
+      if (el) {
+        const wL = (el as any)._wheelL as SVGRectElement | null;
+        const wR = (el as any)._wheelR as SVGRectElement | null;
+        const steerDeg = car.steerAngle * 30;
+        [wL, wR].forEach((w) => {
+          if (w) w.setAttribute('transform', `rotate(${steerDeg} 6 20)`);
+        });
+      }
     }
 
-    // camera follows car according to selected camera mode
     const cfg = CAMERA_CONFIG[cameraMode];
+    let targetBearing = car.heading;
+
+    if (cameraMode === 'cinematic') {
+      const nowSec = performance.now() / 1000;
+      targetBearing = (nowSec * 10) % 360;
+    }
+
+    const curState = cameraStateRef.current;
+    let deltaBearing = (targetBearing - curState.bearing) % 360;
+    if (deltaBearing > 180) deltaBearing -= 360;
+    if (deltaBearing < -180) deltaBearing += 360;
+
+    // Smooth Lerp factor (0.04 for showcase/cinematic mode for ultra calm motion, 0.18 for manual driving)
+    const lerpFactor = isShowcaseMode || cameraMode === 'cinematic' ? 0.04 : 0.18;
+    curState.bearing = (curState.bearing + deltaBearing * lerpFactor + 360) % 360;
+    curState.lat += (car.lat - curState.lat) * lerpFactor;
+    curState.lng += (car.lng - curState.lng) * lerpFactor;
+
     map.jumpTo({
-      center: [car.lng, car.lat],
-      bearing: car.heading,
+      center: [curState.lng, curState.lat],
+      bearing: curState.bearing,
       pitch: cfg.pitch,
       zoom: cfg.zoom,
     });
-  }, [car, ready, cameraMode]);
+  }, [car, ready, cameraMode, isShowcaseMode]);
 
   // V key shortcut to cycle camera view mode
   useEffect(() => {
@@ -388,7 +391,7 @@ export default function RacingGame() {
     if (!isTimeAutoFlow) return;
     const interval = setInterval(() => {
       setTimeInMinutes((prev) => (prev + 1) % 1440);
-    }, 500);
+    }, 400);
     return () => clearInterval(interval);
   }, [isTimeAutoFlow]);
 
@@ -472,18 +475,18 @@ export default function RacingGame() {
   useEffect(() => {
     let raf = 0;
     const check = () => {
-      const flashTime = collisionFlashRef.current;
+      const flashTime = physCollisionFlashRef.current;
       if (flashTime > 0 && performance.now() - flashTime < 600) {
         setCollisionFlash(1 - (performance.now() - flashTime) / 600);
         raf = requestAnimationFrame(check);
       } else {
         setCollisionFlash(0);
-        collisionFlashRef.current = 0;
+        physCollisionFlashRef.current = 0;
       }
     };
     raf = requestAnimationFrame(check);
     return () => cancelAnimationFrame(raf);
-  }, [collisionFlashRef]);
+  }, [physCollisionFlashRef]);
 
   // Dynamic building loading
   const lastFetchCellRef = useRef<string | null>(null);
@@ -528,7 +531,6 @@ export default function RacingGame() {
         if (src && allBuildings.length > 0) {
           const geojson = { type: 'FeatureCollection', features: allBuildings };
           src.setData(geojson as any);
-          (src as any)._data = geojson;
         }
 
         // Check if current target position is inside a building and auto-relocate to nearby road if collision is enabled
@@ -570,21 +572,44 @@ export default function RacingGame() {
 
   // teleport
   const handleTeleport = useCallback(
-    (lat: number, lng: number, label: string) => {
+    (
+      lat: number,
+      lng: number,
+      label: string,
+      options?: { keepCameraMode?: boolean; keepTerrainScale?: boolean; cameraMode?: CameraMode; terrainScale?: number },
+    ) => {
       const map = mapRef.current;
       if (!map) return;
 
-      setCameraMode('topdown');
-      setTerrainScale(1.0);
+      if (!options?.keepCameraMode) {
+        setCameraMode(options?.cameraMode || 'topdown');
+      }
+      if (!options?.keepTerrainScale) {
+        setTerrainScale(options?.terrainScale ?? 1.0);
+      }
 
-      setCar((c) => ({
-        ...c,
+      keysRef.current = {
+        forward: false,
+        backward: false,
+        left: false,
+        right: false,
+        turbo: false,
+      };
+
+      setCar({
         lat,
         lng,
-        speed: 0,
         heading: 0,
+        speed: 0,
         steerAngle: 0,
-      }));
+        turbo: false,
+      });
+
+      cameraStateRef.current = {
+        lat,
+        lng,
+        bearing: 0,
+      };
 
       map.jumpTo({
         center: [lng, lat],
@@ -604,7 +629,7 @@ export default function RacingGame() {
       collisionRef.current = null;
       refreshBuildings(lat, lng);
     },
-    [setCar, refreshBuildings],
+    [setCar, refreshBuildings, keysRef],
   );
 
   // Live weather fetch helper
@@ -687,65 +712,57 @@ export default function RacingGame() {
     handleSelectCourse(course);
   }, [handleSelectCourse]);
 
-  // Showcase Auto-Drive Mode Engine
-  const [isShowcaseMode, setIsShowcaseMode] = useState<boolean>(false);
-  const [showcaseIndex, setShowcaseIndex] = useState<number>(0);
-  const [showcaseTimer, setShowcaseTimer] = useState<number>(60);
+  // Showcase Ambient Engine
+  const applyShowcaseScene = useCallback(
+    (idx: number) => {
+      const total = SHOWCASE_SCENES.length;
+      const sceneIndex = ((idx % total) + total) % total;
+      const scene = SHOWCASE_SCENES[sceneIndex];
 
-  const applyShowcaseScene = useCallback((idx: number) => {
-    const scene = SHOWCASE_SCENES[idx % SHOWCASE_SCENES.length];
-    setIsLiveWeather(false);
-    setLiveWeatherDesc('');
-    setTimeInMinutes(scene.timeInMinutes);
-    setWeather(scene.weather);
-    setWeatherIntensity(scene.weatherIntensity);
-    setCameraMode(scene.cameraMode);
-    setTerrainScale(scene.terrainScale);
-    handleTeleport(scene.lat, scene.lng, scene.locationLabel);
+      setShowcaseIndex(sceneIndex);
+      setShowcaseTimer(60);
 
-    const trackIdx = DRIVING_BGM_PLAYLIST.findIndex((t) => t.id === scene.bgmTrackId);
-    if (trackIdx !== -1) {
-      (musicPlayer as any).currentTrackIndex = trackIdx;
-      musicPlayer.play();
-    }
-  }, [handleTeleport]);
+      setIsLiveWeather(false);
+      setLiveWeatherDesc('');
+      setTimeInMinutes(scene.timeInMinutes);
+      setIsTimeAutoFlow(true); // Automatically flow time for real-time atmosphere shifts
+      setWeather(scene.weather);
+      setWeatherIntensity(scene.weatherIntensity);
+      setCameraMode(scene.cameraMode);
+      setTerrainScale(scene.terrainScale);
+
+      handleTeleport(scene.lat, scene.lng, scene.locationLabel, {
+        keepCameraMode: true,
+        keepTerrainScale: true,
+      });
+
+      const trackIdx = DRIVING_BGM_PLAYLIST.findIndex((t) => t.id === scene.bgmTrackId);
+      if (trackIdx !== -1) {
+        (musicPlayer as any).currentTrackIndex = trackIdx;
+        musicPlayer.play();
+      }
+    },
+    [handleTeleport],
+  );
 
   const handleStartShowcase = useCallback(() => {
     setIsShowcaseMode(true);
-    setShowcaseIndex(0);
-    setShowcaseTimer(60);
+    setShowcasePaused(false);
+    setIsCinematicLetterbox(true);
     applyShowcaseScene(0);
   }, [applyShowcaseScene]);
 
   const handleNextShowcase = useCallback(() => {
-    setShowcaseIndex((prev) => {
-      const next = (prev + 1) % SHOWCASE_SCENES.length;
-      applyShowcaseScene(next);
-      return next;
-    });
-    setShowcaseTimer(60);
-  }, [applyShowcaseScene]);
+    applyShowcaseScene(showcaseIndex + 1);
+  }, [applyShowcaseScene, showcaseIndex]);
 
-  // Showcase Auto Drive & Countdown Timer Loop
+  const handlePrevShowcase = useCallback(() => {
+    applyShowcaseScene(showcaseIndex - 1);
+  }, [applyShowcaseScene, showcaseIndex]);
+
+  // Showcase Countdown Timer Loop
   useEffect(() => {
-    if (!isShowcaseMode || !active) return;
-
-    // Simulate auto cruise driving with smooth sine curvature steering
-    const driveInterval = setInterval(() => {
-      keysRef.current.forward = true;
-      const now = Date.now() / 1000;
-      const steer = Math.sin(now * 0.7);
-      if (steer > 0.45) {
-        keysRef.current.right = true;
-        keysRef.current.left = false;
-      } else if (steer < -0.45) {
-        keysRef.current.left = true;
-        keysRef.current.right = false;
-      } else {
-        keysRef.current.left = false;
-        keysRef.current.right = false;
-      }
-    }, 100);
+    if (!isShowcaseMode || !active || showcasePaused) return;
 
     const timer = setInterval(() => {
       setShowcaseTimer((prev) => {
@@ -757,11 +774,22 @@ export default function RacingGame() {
       });
     }, 1000);
 
-    return () => {
-      clearInterval(driveInterval);
-      clearInterval(timer);
-    };
-  }, [isShowcaseMode, active, handleNextShowcase, keysRef]);
+    return () => clearInterval(timer);
+  }, [isShowcaseMode, active, showcasePaused, handleNextShowcase]);
+
+  // Auto camera angle rotation while zoning out in Showcase Mode
+  useEffect(() => {
+    if (!isShowcaseMode || !active || !autoCameraSwitch) return;
+
+    const interval = setInterval(() => {
+      setCameraMode((prev) => {
+        const idx = CAMERA_MODES.indexOf(prev);
+        return CAMERA_MODES[(idx + 1) % CAMERA_MODES.length];
+      });
+    }, 14000);
+
+    return () => clearInterval(interval);
+  }, [isShowcaseMode, active, autoCameraSwitch]);
 
   // Manual keypress detection -> Exit Showcase mode
   useEffect(() => {
@@ -773,6 +801,7 @@ export default function RacingGame() {
         )
       ) {
         setIsShowcaseMode(false);
+        setIsCinematicLetterbox(false);
         keysRef.current.forward = false;
         keysRef.current.backward = false;
         keysRef.current.left = false;
@@ -848,22 +877,32 @@ export default function RacingGame() {
       {mapLoading && (
         <div className="absolute inset-0 z-[55] flex items-center justify-center bg-slate-900">
           <div className="text-center">
-            <div className="inline-block w-12 h-12 border-4 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin mb-4" />
-            <p className="text-sm text-slate-400">
-              {mapError || '지도 데이터 로딩 중...'}
-            </p>
+            <div className="relative w-16 h-16 mx-auto mb-4">
+              <div className="absolute inset-0 rounded-full border-4 border-cyan-500/20 border-t-cyan-400 animate-spin" />
+            </div>
+            <p className="text-white font-bold text-sm">3D 지형 지도 로딩 중...</p>
           </div>
         </div>
       )}
 
-      {/* Collision flash overlay */}
+      {/* Map error indicator */}
+      {mapError && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[60] bg-rose-500/90 text-white text-xs px-4 py-2 rounded-xl shadow-lg font-semibold flex items-center gap-2">
+          <span>⚠️ {mapError}</span>
+          <button
+            onClick={() => setMapError(null)}
+            className="text-white/80 hover:text-white underline ml-2"
+          >
+            닫기
+          </button>
+        </div>
+      )}
+
+      {/* Collision Flash Effect */}
       {collisionFlash > 0 && (
         <div
-          className="absolute inset-0 pointer-events-none z-40"
-          style={{
-            boxShadow: `inset 0 0 120px rgba(255,0,0,${collisionFlash * 0.6})`,
-            backgroundColor: `rgba(255,0,0,${collisionFlash * 0.15})`,
-          }}
+          className="absolute inset-0 z-[52] pointer-events-none transition-opacity duration-75 bg-red-600/30 border-4 border-red-500"
+          style={{ opacity: collisionFlash }}
         />
       )}
 
@@ -915,39 +954,15 @@ export default function RacingGame() {
         </div>
       )}
 
-      {/* Start overlay */}
+      {/* Start screen modal overlay */}
       {!active && (
-        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm">
-          <div className="text-center max-w-md px-6">
-            <div className="mb-4 flex justify-center">
-              <div className="relative">
-                <div className="absolute inset-0 blur-2xl bg-cyan-500/30 rounded-full" />
-                <svg
-                  width="80"
-                  height="80"
-                  viewBox="0 0 80 80"
-                  className="relative drop-shadow-lg"
-                >
-                  <defs>
-                    <linearGradient id="bigcar" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0" stop-color="#f97316" />
-                      <stop offset="1" stop-color="#dc2626" />
-                    </linearGradient>
-                  </defs>
-                  <path
-                    d="M10 30 L60 30 L70 40 L70 55 L10 55 Z"
-                    fill="url(#bigcar)"
-                    stroke="#7c2d12"
-                    strokeWidth="1.5"
-                  />
-                  <path
-                    d="M22 30 L40 14 L52 30 Z"
-                    fill="#1e293b"
-                    opacity="0.85"
-                  />
-                  <circle cx="20" cy="55" r="8" fill="#1a1a1a" />
-                  <circle cx="60" cy="55" r="8" fill="#1a1a1a" />
-                  <circle cx="20" cy="55" r="3" fill="#555" />
+        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-slate-950/80 backdrop-blur-md">
+          <div className="text-center max-w-md p-8 rounded-3xl bg-slate-900/90 border border-white/10 shadow-2xl">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 rounded-2xl bg-cyan-500/20 border border-cyan-400/30 flex items-center justify-center">
+                <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
+                  <path d="M20 70 L50 30 L80 70 Z" fill="#38bdf8" opacity="0.8" />
+                  <path d="M50 30 L50 70" stroke="#0f172a" strokeWidth="4" strokeDasharray="6 4" />
                   <circle cx="60" cy="55" r="3" fill="#555" />
                 </svg>
               </div>
@@ -1016,48 +1031,142 @@ export default function RacingGame() {
         </>
       )}
 
-      {/* Showcase Mode Banner */}
+      {/* Cinematic Letterbox Film Bars */}
+      {(isCinematicLetterbox || isShowcaseMode) && (
+        <>
+          <div className="absolute top-0 left-0 right-0 h-12 sm:h-14 bg-slate-950/95 backdrop-blur-md z-[55] border-b border-white/10 flex items-center justify-between px-6 transition-all duration-500 animate-fade-in pointer-events-auto">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-400/40 text-xs font-bold">
+                🎬 시네마틱 멍때리기 뷰
+              </span>
+              <span className="text-xs text-slate-300 font-semibold truncate hidden sm:inline">
+                {SHOWCASE_SCENES[showcaseIndex]?.title}
+              </span>
+            </div>
+            <button
+              onClick={() => setIsCinematicLetterbox(false)}
+              className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded bg-white/10 transition-colors"
+            >
+              ✕ 레터박스 닫기
+            </button>
+          </div>
+
+          <div className="absolute bottom-0 left-0 right-0 h-12 sm:h-14 bg-slate-950/95 backdrop-blur-md z-[55] border-t border-white/10 flex items-center justify-between px-6 transition-all duration-500 animate-fade-in pointer-events-none" />
+        </>
+      )}
+
+      {/* Showcase Mode Ambient Control Banner */}
       {isShowcaseMode && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center gap-1.5 animate-fade-in pointer-events-auto max-w-[calc(100vw-2rem)]">
-          <div className="rounded-2xl bg-gradient-to-r from-purple-900/90 via-slate-900/95 to-indigo-900/90 backdrop-blur-2xl border-2 border-amber-400/50 shadow-2xl px-5 py-2.5 flex items-center gap-4">
-            <div className="flex items-center gap-2.5">
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center gap-2 animate-fade-in pointer-events-auto max-w-[calc(100vw-2rem)]">
+          <div className="rounded-2xl bg-slate-900/95 backdrop-blur-2xl border-2 border-amber-400/50 shadow-2xl p-3 flex flex-col sm:flex-row items-center gap-3">
+            {/* Location Title & Info */}
+            <div className="flex items-center gap-3 pr-2 sm:border-r border-white/15">
               <Film className="h-5 w-5 text-amber-400 animate-pulse shrink-0" />
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-black text-amber-300 tracking-wider uppercase">
-                    🎬 구경 모드 진행 중
+                    ☕ 멍때리기 구경하기 ({showcaseIndex + 1}/{SHOWCASE_SCENES.length})
                   </span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/30 font-bold">
-                    다음 장소 {showcaseTimer}초 후 ➔
+                    {showcasePaused ? '⏸️ 일시정지' : `다음 장소 ${showcaseTimer}초`}
                   </span>
                 </div>
-                <span className="text-xs sm:text-sm font-bold text-white tracking-wide truncate max-w-[200px] sm:max-w-xs">
+                <span className="text-xs sm:text-sm font-bold text-white tracking-wide truncate max-w-[220px] sm:max-w-xs">
                   {SHOWCASE_SCENES[showcaseIndex]?.title}
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 border-l border-white/15 pl-3">
+            {/* Navigation & Speed Controls */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={handlePrevShowcase}
+                className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-amber-200 text-xs font-bold transition-all active:scale-95 shrink-0"
+                title="이전 장소로 이동"
+              >
+                ⏮️ 이전
+              </button>
+
               <button
                 onClick={handleNextShowcase}
-                className="px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 text-xs font-bold transition-all flex items-center gap-1 shadow-md active:scale-95 shrink-0"
+                className="px-3 py-1.5 rounded-xl bg-amber-500/30 hover:bg-amber-500/40 border border-amber-400/50 text-amber-200 text-xs font-bold transition-all flex items-center gap-1 shadow-lg shadow-amber-950/40 active:scale-95 shrink-0 animate-pulse"
+                title="다음 장소로 이동"
               >
                 ⏭️ 다음 장소
               </button>
 
               <button
+                onClick={() => setShowcasePaused((prev) => !prev)}
+                className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-slate-200 text-xs font-bold transition-all active:scale-95 shrink-0"
+                title="자동 순환 일시정지/재개"
+              >
+                {showcasePaused ? '▶️ 재개' : '⏸️ 정지'}
+              </button>
+
+              {/* Speed Preset Switcher */}
+              <div className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-xl border border-white/10">
+                <button
+                  onClick={() => setShowcaseSpeed(35)}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                    showcaseSpeed === 35
+                      ? 'bg-amber-400 text-slate-950 font-black shadow'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="🐌 차분히 (35km/h 스무스 관람)"
+                >
+                  🐌 35
+                </button>
+                <button
+                  onClick={() => setShowcaseSpeed(60)}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                    showcaseSpeed === 60
+                      ? 'bg-amber-400 text-slate-950 font-black shadow'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="🚗 보통 (60km/h)"
+                >
+                  🚗 60
+                </button>
+                <button
+                  onClick={() => setShowcaseSpeed(95)}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                    showcaseSpeed === 95
+                      ? 'bg-amber-400 text-slate-950 font-black shadow'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="🏎️ 빠르게 (95km/h)"
+                >
+                  🏎️ 95
+                </button>
+              </div>
+
+              {/* Auto Camera Cycle Toggle */}
+              <button
+                onClick={() => setAutoCameraSwitch((prev) => !prev)}
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                  autoCameraSwitch
+                    ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
+                    : 'bg-white/5 text-slate-400 border-white/10'
+                }`}
+                title="시점 14초마다 자동 전환"
+              >
+                🎥 시점자동 {autoCameraSwitch ? 'ON' : 'OFF'}
+              </button>
+
+              {/* Stop Showcase */}
+              <button
                 onClick={() => {
                   setIsShowcaseMode(false);
-                  keysRef.current.forward = false;
+                  setIsCinematicLetterbox(false);
                 }}
-                className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-slate-200 text-xs font-bold transition-all flex items-center gap-1 shadow-md active:scale-95 shrink-0"
+                className="px-2.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/40 text-rose-200 text-xs font-bold transition-all active:scale-95 shrink-0"
               >
-                🛑 직접 운전하기
+                🛑 직접 운전
               </button>
             </div>
           </div>
-          <p className="text-[10px] sm:text-[11px] font-semibold text-amber-200/90 bg-slate-950/80 px-3 py-0.5 rounded-full border border-amber-400/20 drop-shadow text-center">
-            💡 아무 키(W,A,S,D)나 조이스틱을 터치하면 언제든 직접 운전하실 수 있습니다.
+          <p className="text-[10px] font-medium text-amber-200/80 bg-slate-950/80 px-3 py-0.5 rounded-full border border-amber-400/20 drop-shadow text-center">
+            ☕ 편안하게 멍때리며 관람하는 모드입니다. 자동차 시점, 날씨, 시간, 장소가 차분하게 자동 연출됩니다.
           </p>
         </div>
       )}

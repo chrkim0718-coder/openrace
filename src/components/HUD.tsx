@@ -3,7 +3,7 @@ import { Gauge, MapPin, Sparkles, Building2, Shield, Mountain, Tag, Camera, Clou
 import type { CarState, WeatherMode } from '@/types/game';
 import { getTimeOfDayAtmosphere } from '@/utils/timeOfDay';
 
-export type CameraMode = 'chase' | 'topdown' | 'sky' | 'bonnet';
+export type CameraMode = 'chase' | 'topdown' | 'sky' | 'bonnet' | 'cinematic';
 
 export const CAMERA_CONFIG: Record<
   CameraMode,
@@ -13,9 +13,10 @@ export const CAMERA_CONFIG: Record<
   topdown: { pitch: 58, zoom: 16.2, label: '탑다운 조감도' },
   sky: { pitch: 35, zoom: 15.2, label: '스카이뷰' },
   bonnet: { pitch: 73, zoom: 17.5, label: '1인칭 보닛' },
+  cinematic: { pitch: 65, zoom: 16.2, label: '🎬 시네마틱 360°' },
 };
 
-export const CAMERA_MODES: CameraMode[] = ['chase', 'topdown', 'sky', 'bonnet'];
+export const CAMERA_MODES: CameraMode[] = ['chase', 'topdown', 'sky', 'bonnet', 'cinematic'];
 
 export const TERRAIN_LEVELS = [
   { value: 0, label: '0x (평지)' },
