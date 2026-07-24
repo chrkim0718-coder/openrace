@@ -22,7 +22,7 @@ export default function SearchPanel({
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState<'world' | 'seoul'>('world');
+  const [activeTab, setActiveTab] = useState<'world' | 'seoul' | 'nationwide'>('world');
   const [selectedTheme, setSelectedTheme] = useState<ThemeCategory | 'all'>('all');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -144,28 +144,38 @@ export default function SearchPanel({
           </div>
         )}
 
-        {/* Tab switcher */}
+        {/* Tab switcher: 3 Tabs */}
         <div className="flex border-t border-white/10 bg-slate-950/60 p-1 gap-1">
           <button
             onClick={() => setActiveTab('world')}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-all ${
+            className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all ${
               activeTab === 'world'
                 ? 'bg-cyan-500/25 text-cyan-300 border border-cyan-400/30'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
             <Globe className="h-3.5 w-3.5" />
-            World Scenic Drives
+            월드
           </button>
           <button
             onClick={() => setActiveTab('seoul')}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-all ${
+            className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all ${
               activeTab === 'seoul'
                 ? 'bg-cyan-500/25 text-cyan-300 border border-cyan-400/30'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            🏛️ 서울 명소
+            🏛️ 서울
+          </button>
+          <button
+            onClick={() => setActiveTab('nationwide')}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all ${
+              activeTab === 'nationwide'
+                ? 'bg-cyan-500/25 text-cyan-300 border border-cyan-400/30'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            🇰🇷 전국
           </button>
         </div>
 
@@ -248,6 +258,34 @@ export default function SearchPanel({
                 { name: '🌳 서울숲', lat: 37.5447, lng: 127.0378 },
                 { name: '🌊 반포대교', lat: 37.5134, lng: 126.9961 },
                 { name: '⛩️ 북촌한옥마을', lat: 37.5826, lng: 126.9837 },
+              ].map((preset, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => onTeleport(preset.lat, preset.lng, preset.name)}
+                  className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-cyan-500/25 hover:border-cyan-400/50 border border-white/10 text-xs text-slate-200 hover:text-white font-medium transition-all text-left truncate select-none active:scale-95"
+                >
+                  {preset.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab Content 3: Nationwide Landmark & Scenic Roads presets */}
+        {activeTab === 'nationwide' && (
+          <div className="p-3 border-t border-white/10 max-h-64 overflow-y-auto">
+            <div className="grid grid-cols-2 gap-1.5">
+              {[
+                { name: '🌊 부산 해운대', lat: 35.1587, lng: 129.1604 },
+                { name: '🌉 부산 광안대교', lat: 35.1395, lng: 129.1236 },
+                { name: '🏯 경주 첨성대', lat: 35.8347, lng: 129.219 },
+                { name: '🌉 인천대교', lat: 37.4089, lng: 126.5412 },
+                { name: '🌊 여수 돌산대교', lat: 34.7314, lng: 127.7345 },
+                { name: '🌄 강릉 안반데기', lat: 37.6086, lng: 128.7744 },
+                { name: '🏞️ 단양 남한강', lat: 36.985, lng: 128.3615 },
+                { name: '🌊 포항 호미곶', lat: 36.0792, lng: 129.5694 },
+                { name: '🌴 담양 메타세쿼이아', lat: 35.3268, lng: 126.9961 },
+                { name: '🌋 제주 성산일출봉', lat: 33.4586, lng: 126.9422 },
               ].map((preset, idx) => (
                 <button
                   key={idx}
