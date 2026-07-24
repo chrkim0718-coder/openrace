@@ -18,7 +18,7 @@ import { audioEngine } from '@/utils/audioEngine';
 import { fetchLiveWeather } from '@/utils/liveWeather';
 import { SCENIC_COURSES } from '@/data/scenicDrives';
 
-const INITIAL = { lat: 37.5665, lng: 126.978, heading: 0 }; // Seoul
+const INITIAL = { lat: 35.1587, lng: 129.1604, heading: 0 }; // Busan Haeundae Beach
 
 const WEATHER_FILTERS: Record<WeatherMode, string> = {
   day: 'none',
@@ -49,7 +49,7 @@ export default function RacingGame() {
   const [isLiveWeather, setIsLiveWeather] = useState(false);
   const [liveWeatherDesc, setLiveWeatherDesc] = useState<string>('');
   const [isMuted, setIsMuted] = useState(true);
-  const [locationLabel, setLocationLabel] = useState('서울');
+  const [locationLabel, setLocationLabel] = useState('부산 해운대');
   const [ready, setReady] = useState(false);
   const [mapLoading, setMapLoading] = useState(true);
   const [mapError, setMapError] = useState<string | null>(null);
