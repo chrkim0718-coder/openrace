@@ -87,10 +87,10 @@ export default function RacingGame() {
         ],
       },
       center: [INITIAL.lng, INITIAL.lat],
-      zoom: 18.2,
+      zoom: 17.6,
       bearing: 0,
-      pitch: 80,
-      maxPitch: 85,
+      pitch: 70,
+      maxPitch: 75,
       attributionControl: { compact: true },
       dragRotate: false,
       dragPan: false,
@@ -108,6 +108,21 @@ export default function RacingGame() {
 
     map.on('load', async () => {
       setMapLoading(false);
+
+      // Sky horizon atmosphere
+      try {
+        if (typeof (map as any).setFog === 'function') {
+          (map as any).setFog({
+            range: [1.0, 12.0],
+            color: '#87ceeb',
+            'horizon-blend': 0.1,
+            'high-color': '#1e293b',
+            'space-color': '#0f172a',
+          });
+        }
+      } catch (err) {
+        console.warn('setFog error:', err);
+      }
 
       // Add 3D Terrain DEM source & enable 3D terrain elevation mesh
       if (!map.getSource('terrain-dem')) {
