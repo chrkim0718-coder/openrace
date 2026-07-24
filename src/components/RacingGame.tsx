@@ -38,6 +38,7 @@ export default function RacingGame() {
   const [weather, setWeather] = useState<WeatherMode>('day');
   const [showBuildings, setShowBuildings] = useState(false);
   const [enableCollision, setEnableCollision] = useState(false);
+  const [showLabels, setShowLabels] = useState(true);
   const [terrainScale, setTerrainScale] = useState(1.0);
   const [locationLabel, setLocationLabel] = useState('서울');
   const [ready, setReady] = useState(false);
@@ -140,6 +141,32 @@ export default function RacingGame() {
           },
           'satellite-tiles',
         );
+      }
+
+      // Add Reference Place Labels (City, Landmark, Street Names Overlay)
+      if (!map.getSource('place-labels')) {
+        map.addSource('place-labels', {
+          type: 'raster',
+          tiles: [
+            'https://basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}@2x.png',
+            'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+          ],
+          tileSize: 256,
+          maxzoom: 19,
+        });
+      }
+      if (!map.getLayer('place-labels-layer')) {
+        map.addLayer({
+          id: 'place-labels-layer',
+          type: 'raster',
+          source: 'place-labels',
+          layout: {
+            visibility: showLabels ? 'visible' : 'none',
+          },
+          paint: {
+            'raster-opacity': 0.95,
+          },
+        });
       }
 
       // Initialize GeoJSON source & 3D buildings layer unconditionally
@@ -329,6 +356,19 @@ export default function RacingGame() {
       map.setLayoutProperty('building-outlines', 'visibility', vis);
     }
   }, [showBuildings, ready]);
+
+  // toggle place-labels visibility
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    if (map.getLayer('place-labels-layer')) {
+      map.setLayoutProperty(
+        'place-labels-layer',
+        'visibility',
+        showLabels ? 'visible' : 'none',
+      );
+    }
+  }, [showLabels, ready]);
 
   // dynamic 3d terrain scale exaggeration update
   useEffect(() => {
@@ -676,10 +716,12 @@ export default function RacingGame() {
             weather={weather}
             showBuildings={showBuildings}
             enableCollision={enableCollision}
+            showLabels={showLabels}
             terrainScale={terrainScale}
             onWeatherChange={setWeather}
             onToggleBuildings={setShowBuildings}
             onToggleCollision={setEnableCollision}
+            onToggleLabels={setShowLabels}
             onTerrainScaleChange={setTerrainScale}
             onReset={handleReset}
           />

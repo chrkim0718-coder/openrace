@@ -1,4 +1,4 @@
-import { Gauge, MapPin, Sparkles, Building2, Shield, Mountain } from 'lucide-react';
+import { Gauge, MapPin, Sparkles, Building2, Shield, Mountain, Tag } from 'lucide-react';
 import type { CarState, WeatherMode } from '@/types/game';
 
 export const TERRAIN_LEVELS = [
@@ -15,10 +15,12 @@ interface Props {
   weather: WeatherMode;
   showBuildings: boolean;
   enableCollision: boolean;
+  showLabels: boolean;
   terrainScale: number;
   onWeatherChange: (w: WeatherMode) => void;
   onToggleBuildings: (show: boolean) => void;
   onToggleCollision: (enable: boolean) => void;
+  onToggleLabels: (show: boolean) => void;
   onTerrainScaleChange: (scale: number) => void;
   onReset: () => void;
 }
@@ -36,10 +38,12 @@ export default function HUD({
   weather,
   showBuildings,
   enableCollision,
+  showLabels,
   terrainScale,
   onWeatherChange,
   onToggleBuildings,
   onToggleCollision,
+  onToggleLabels,
   onTerrainScaleChange,
   onReset,
 }: Props) {
@@ -169,6 +173,17 @@ export default function HUD({
           >
             <Mountain className="h-3.5 w-3.5 text-cyan-400" />
             지형 {TERRAIN_LEVELS.find((l) => Math.abs(l.value - terrainScale) < 0.1)?.label || `${terrainScale}x`}
+          </button>
+          <button
+            onClick={() => onToggleLabels(!showLabels)}
+            className={`rounded-xl backdrop-blur-xl border shadow-xl px-3 py-2 text-xs transition-all flex items-center gap-1.5 font-medium ${
+              showLabels
+                ? 'bg-cyan-500/25 border-cyan-400/40 text-cyan-200 hover:bg-cyan-500/35'
+                : 'bg-slate-900/85 border-white/10 text-slate-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Tag className="h-3.5 w-3.5" />
+            지명 {showLabels ? 'ON' : 'OFF'}
           </button>
           <button
             onClick={() => onToggleBuildings(!showBuildings)}
