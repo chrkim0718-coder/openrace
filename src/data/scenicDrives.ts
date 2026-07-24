@@ -24,7 +24,7 @@ export const SCENIC_COURSES: ScenicCourse[] = [
     lat: 42.8048,
     lng: 140.6874,
     weather: 'snow',
-    terrainScale: 1.9,
+    terrainScale: 1.0,
     description: '세계 최고의 파우더 스노우와 요테이산 설경이 펼쳐지는 홋카이도 드라이브',
   },
   {
@@ -35,7 +35,7 @@ export const SCENIC_COURSES: ScenicCourse[] = [
     lat: 46.5724,
     lng: 8.4019,
     weather: 'snow',
-    terrainScale: 3.5,
+    terrainScale: 1.0,
     description: '영화 007 골드핑거의 무대, 웅장한 알프스 빙하와 굽이치는 영구설 고개',
   },
   {
@@ -46,7 +46,7 @@ export const SCENIC_COURSES: ScenicCourse[] = [
     lat: 52.2045,
     lng: -117.2023,
     weather: 'snow',
-    terrainScale: 3.5,
+    terrainScale: 1.0,
     description: '빙하와 침엽수림이 장관을 이루는 록키 산맥 최고의 만년설 파크웨이',
   },
   {
@@ -57,7 +57,7 @@ export const SCENIC_COURSES: ScenicCourse[] = [
     lat: 64.1466,
     lng: -16.2345,
     weather: 'snow',
-    terrainScale: 1.9,
+    terrainScale: 1.0,
     description: '신비로운 푸른 얼음 동굴과 검은 모래가 교차하는 극지 빙하 코스',
   },
 
@@ -70,7 +70,7 @@ export const SCENIC_COURSES: ScenicCourse[] = [
     lat: 62.4586,
     lng: 7.6698,
     weather: 'day',
-    terrainScale: 3.5,
+    terrainScale: 1.0,
     description: '11개의 연속 180도 헤어핀과 수직 폭포 절벽이 아찔한 전설의 산악 도로',
   },
   {
@@ -81,7 +81,7 @@ export const SCENIC_COURSES: ScenicCourse[] = [
     lat: 38.1578,
     lng: 128.4042,
     weather: 'day',
-    terrainScale: 3.5,
+    terrainScale: 1.0,
     description: '설악산 기암괴석 능선을 따라 펼쳐지는 국내 최고의 다이나믹 힐클라임 코스',
   },
   {
@@ -92,7 +92,7 @@ export const SCENIC_COURSES: ScenicCourse[] = [
     lat: -44.9744,
     lng: 168.8601,
     weather: 'day',
-    terrainScale: 3.5,
+    terrainScale: 1.0,
     description: '뉴질랜드에서 가장 높은 포장도로! 퀸스타운 전경이 한눈에 들어오는 굽이길',
   },
 
@@ -105,7 +105,7 @@ export const SCENIC_COURSES: ScenicCourse[] = [
     lat: 62.1008,
     lng: 7.2059,
     weather: 'day',
-    terrainScale: 3.5,
+    terrainScale: 1.0,
     description: '유네스코 세계자연유산! 깊은 에메랄드빛 해협과 수직 암벽의 피오르 드라이브',
   },
   {
@@ -116,7 +116,7 @@ export const SCENIC_COURSES: ScenicCourse[] = [
     lat: 63.4194,
     lng: -19.006,
     weather: 'rain',
-    terrainScale: 1.9,
+    terrainScale: 1.0,
     description: '거친 북대서양 파도와 주상절리 아치 해안선이 연출하는 몽환적 절경',
   },
   {
@@ -127,7 +127,7 @@ export const SCENIC_COURSES: ScenicCourse[] = [
     lat: -45.0312,
     lng: 168.6626,
     weather: 'day',
-    terrainScale: 1.9,
+    terrainScale: 1.0,
     description: '반지의 제왕 촬영지! 와카티푸 호수 해안선을 따라 펼쳐지는 환상의 드라이브',
   },
   {
@@ -138,7 +138,7 @@ export const SCENIC_COURSES: ScenicCourse[] = [
     lat: 33.3617,
     lng: 126.5385,
     weather: 'day',
-    terrainScale: 1.9,
+    terrainScale: 1.0,
     description: '한라산 고원 숲길을 뚫고 바다 표면까지 시원하게 이어지는 제주 대표 힐링 코스',
   },
 
@@ -162,7 +162,7 @@ export const SCENIC_COURSES: ScenicCourse[] = [
     lat: 22.2713,
     lng: 114.1495,
     weather: 'night',
-    terrainScale: 1.9,
+    terrainScale: 1.0,
     description: '빅토리아 하버의 억만 달러짜리 3D 야경을 보며 산길을 내려오는 와인딩',
   },
   {
@@ -195,7 +195,7 @@ export const SCENIC_COURSES: ScenicCourse[] = [
     lat: 37.5512,
     lng: 126.9882,
     weather: 'night',
-    terrainScale: 1.9,
+    terrainScale: 1.0,
     description: '서울 도심야경과 남산 파노라마가 한눈에 들어오는 로맨틱 나이트 드라이브',
   },
 ];

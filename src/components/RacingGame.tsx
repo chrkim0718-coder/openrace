@@ -607,6 +607,9 @@ export default function RacingGame() {
       const map = mapRef.current;
       if (!map) return;
 
+      setCameraMode('chase');
+      setTerrainScale(1.0);
+
       setCar((c) => ({
         ...c,
         lat,
@@ -682,7 +685,8 @@ export default function RacingGame() {
       setIsLiveWeather(false);
       setLiveWeatherDesc('');
       setWeather(course.weather);
-      setTerrainScale(course.terrainScale);
+      setCameraMode('chase');
+      setTerrainScale(1.0);
       handleTeleport(course.lat, course.lng, `${course.name} (${course.location})`);
     },
     [handleTeleport],
