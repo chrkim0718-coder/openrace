@@ -19,18 +19,19 @@ html, body, #root {
 }
 
 @keyframes rain-fall {
-  0% { transform: translateY(-20vh); opacity: 0; }
-  10% { opacity: 0.8; }
-  100% { transform: translateY(120vh); opacity: 0; }
+  0% { transform: translateY(-20vh) rotate(5deg); opacity: 0; }
+  15% { opacity: 0.9; }
+  100% { transform: translateY(120vh) rotate(5deg); opacity: 0; }
 }
 .animate-rain {
   animation: rain-fall linear infinite;
 }
 
 @keyframes snow-fall {
-  0% { transform: translateY(-10vh) translateX(0); opacity: 0; }
-  10% { opacity: 0.9; }
-  100% { transform: translateY(110vh) translateX(20px); opacity: 0; }
+  0% { transform: translateY(-10vh) translateX(0) scale(0.8); opacity: 0; }
+  15% { opacity: 0.95; }
+  50% { transform: translateY(50vh) translateX(-20px) scale(1.1); }
+  100% { transform: translateY(115vh) translateX(30px) scale(0.9); opacity: 0.1; }
 }
 .animate-snow {
   animation: snow-fall linear infinite;

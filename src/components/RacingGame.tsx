@@ -679,14 +679,13 @@ export default function RacingGame() {
   // Course selection and Random Scenic generator
   const handleSelectCourse = useCallback(
     (course: ScenicCourse) => {
-      handleTeleport(course.lat, course.lng, `${course.name} (${course.location})`);
+      setIsLiveWeather(false);
+      setLiveWeatherDesc('');
       setWeather(course.weather);
       setTerrainScale(course.terrainScale);
-      if (isLiveWeather) {
-        updateLiveWeather(course.lat, course.lng);
-      }
+      handleTeleport(course.lat, course.lng, `${course.name} (${course.location})`);
     },
-    [handleTeleport, isLiveWeather, updateLiveWeather],
+    [handleTeleport],
   );
 
   const handleRandomScenic = useCallback(() => {
@@ -805,17 +804,23 @@ export default function RacingGame() {
       {/* snow effect */}
       {weather === 'snow' && (
         <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
-          {Array.from({ length: 50 }).map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-1.5 h-1.5 rounded-full bg-white/70 animate-snow"
-              style={{
-                left: `${(i * 2.3) % 100}%`,
-                animationDelay: `${(i % 8) * 0.4}s`,
-                animationDuration: `${3 + (i % 4) * 0.8}s`,
-              }}
-            />
-          ))}
+          {Array.from({ length: 85 }).map((_, i) => {
+            const size = (i % 3) * 1.5 + 2; // 2px to 5px
+            return (
+              <div
+                key={i}
+                className="absolute rounded-full bg-white/80 animate-snow shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                style={{
+                  width: `${size}px`,
+                  height: `${size}px`,
+                  left: `${(i * 1.23) % 100}%`,
+                  animationDelay: `${(i % 12) * 0.25}s`,
+                  animationDuration: `${2.8 + (i % 5) * 0.7}s`,
+                  opacity: 0.6 + (i % 4) * 0.1,
+                }}
+              />
+            );
+          })}
         </div>
       )}
 
