@@ -67,11 +67,12 @@ export default function RacingGame() {
   // Showcase & Spectator Ambient Mode State
   const [isShowcaseMode, setIsShowcaseMode] = useState<boolean>(false);
   const [showcaseIndex, setShowcaseIndex] = useState<number>(0);
-  const [showcaseTimer, setShowcaseTimer] = useState<number>(60);
-  const [showcaseSpeed, setShowcaseSpeed] = useState<number>(50); // 50 km/h smooth cruise speed
+  const [showcaseTimer, setShowcaseTimer] = useState<number>(80);
+  const [showcaseSpeed, setShowcaseSpeed] = useState<number>(30); // 30 km/h — calm relaxing pace
   const [showcasePaused, setShowcasePaused] = useState<boolean>(false);
-  const [autoCameraSwitch, setAutoCameraSwitch] = useState<boolean>(true); // Auto cycle camera angles
+  const [autoCameraSwitch, setAutoCameraSwitch] = useState<boolean>(true);
   const [isCinematicLetterbox, setIsCinematicLetterbox] = useState<boolean>(false);
+  const [showcaseFade, setShowcaseFade] = useState<boolean>(false); // blackout fade between scenes
 
   const { car, setCar, keysRef, collisionFlashRef: physCollisionFlashRef } = useCarPhysics(
     INITIAL,
@@ -318,11 +319,10 @@ export default function RacingGame() {
     const cfg = CAMERA_CONFIG[cameraMode];
     let targetBearing = car.heading;
 
-    // ── GTA / Cinematic: orbit around car ──
+    // Cinematic / GTA: slow orbit around car
     if (cameraMode === 'cinematic' || cameraMode === 'gta') {
       const nowSec = performance.now() / 1000;
-      // Slow orbit for cinematic, faster for GTA
-      const orbitSpeed = cameraMode === 'gta' ? 14 : 8;
+      const orbitSpeed = cameraMode === 'gta' ? 12 : 6; // deg/sec
       targetBearing = (car.heading + nowSec * orbitSpeed) % 360;
     }
 
@@ -331,37 +331,30 @@ export default function RacingGame() {
     if (deltaBearing > 180) deltaBearing -= 360;
     if (deltaBearing < -180) deltaBearing += 360;
 
-    // Lerp factor: very slow for showcase/cinematic, normal for manual driving
-    const lerpFactor = isShowcaseMode || cameraMode === 'cinematic' || cameraMode === 'gta' ? 0.035 : 0.18;
+    // In showcase: ultra-buttery lerp (0.018), no shake whatsoever — pure cinematic calm
+    const lerpFactor = isShowcaseMode ? 0.018 :
+      (cameraMode === 'cinematic' || cameraMode === 'gta') ? 0.035 : 0.18;
+
     curState.bearing = (curState.bearing + deltaBearing * lerpFactor + 360) % 360;
     curState.lat += (car.lat - curState.lat) * lerpFactor;
     curState.lng += (car.lng - curState.lng) * lerpFactor;
 
-    // ── Speed-proportional camera shake for driving immersion ──
-    const speedFactor = Math.min(car.speed / 120, 1);
-    const shakeAmt = speedFactor * 0.000012;
-    const shakeNow = performance.now();
-    const shakeLat = Math.sin(shakeNow * 0.037) * shakeAmt;
-    const shakeLng = Math.cos(shakeNow * 0.041) * shakeAmt;
+    // Manual mode only: subtle speed feel (zoom + pitch). Showcase is always steady.
+    const speedFactor = isShowcaseMode ? 0 : Math.min(car.speed / 120, 1);
+    const targetZoom = cfg.zoom + speedFactor * -0.5;
+    const targetPitch = Math.min(cfg.pitch + speedFactor * 3, 82);
 
-    // ── Dynamic zoom: zoom in at high speed, zoom out when slow ──
-    const speedZoomOffset = speedFactor * -0.5; // zoom out slightly at high speed
-    const targetZoom = cfg.zoom + speedZoomOffset;
-
-    // ── Dynamic pitch: lean down at high speed ──
-    const speedPitchOffset = speedFactor * 3;
-    const targetPitch = Math.min(cfg.pitch + speedPitchOffset, 82);
-
+    // Perfectly still center — no shake in showcase
     map.jumpTo({
-      center: [curState.lng + shakeLng, curState.lat + shakeLat],
+      center: [curState.lng, curState.lat],
       bearing: curState.bearing,
       pitch: targetPitch,
       zoom: targetZoom,
     });
 
-    // ── Speed motion blur on canvas at high speed ──
-    const canvas = map.getCanvas();
-    if (car.speed > 60) {
+    // Manual mode only: motion blur at high speed
+    if (!isShowcaseMode && car.speed > 60) {
+      const canvas = map.getCanvas();
       const blurPx = ((car.speed - 60) / 100) * 1.2;
       canvas.style.filter = (canvas.style.filter || '').replace(/ blur\([^)]+\)/g, '') +
         ` blur(${blurPx.toFixed(2)}px)`;
@@ -388,13 +381,14 @@ export default function RacingGame() {
   const [isTimeAutoFlow, setIsTimeAutoFlow] = useState<boolean>(false);
 
   // Auto-advance time cycle when isTimeAutoFlow is enabled
+  // Showcase: very slow (2.4s per game-minute = ~1 real hour per hour), natural sky drift
   useEffect(() => {
     if (!isTimeAutoFlow) return;
     const interval = setInterval(() => {
       setTimeInMinutes((prev) => (prev + 1) % 1440);
-    }, 400);
+    }, isShowcaseMode ? 2400 : 400);
     return () => clearInterval(interval);
-  }, [isTimeAutoFlow]);
+  }, [isTimeAutoFlow, isShowcaseMode]);
 
   // Apply weather and 24-hour time of day atmosphere
   useEffect(() => {
@@ -781,8 +775,13 @@ export default function RacingGame() {
     const timer = setInterval(() => {
       setShowcaseTimer((prev) => {
         if (prev <= 1) {
-          handleNextShowcase();
-          return 60;
+          // Smooth fade-to-black → next scene → fade in
+          setShowcaseFade(true);
+          setTimeout(() => {
+            handleNextShowcase();
+            setTimeout(() => setShowcaseFade(false), 900);
+          }, 800);
+          return 80;
         }
         return prev - 1;
       });
@@ -791,16 +790,17 @@ export default function RacingGame() {
     return () => clearInterval(timer);
   }, [isShowcaseMode, active, showcasePaused, handleNextShowcase]);
 
-  // Auto camera angle rotation while zoning out in Showcase Mode
+  // Calm camera rotation — only peaceful angles, slow 20s cycle
+  const CALM_CAMERAS: CameraMode[] = ['chase', 'sky', 'topdown'];
   useEffect(() => {
     if (!isShowcaseMode || !active || !autoCameraSwitch) return;
 
     const interval = setInterval(() => {
       setCameraMode((prev) => {
-        const idx = CAMERA_MODES.indexOf(prev);
-        return CAMERA_MODES[(idx + 1) % CAMERA_MODES.length];
+        const idx = CALM_CAMERAS.indexOf(prev as CameraMode);
+        return CALM_CAMERAS[(idx + 1) % CALM_CAMERAS.length] ?? 'chase';
       });
-    }, 14000);
+    }, 20000); // 20s — slow, non-jarring
 
     return () => clearInterval(interval);
   }, [isShowcaseMode, active, autoCameraSwitch]);
@@ -1002,8 +1002,8 @@ export default function RacingGame() {
         </div>
       )}
 
-      {/* HUD & Showcase Banner */}
-      {active && (
+      {/* ── Normal Game UI (hidden completely in showcase mode) ─────────── */}
+      {active && !isShowcaseMode && (
         <>
           <SearchPanel
             onTeleport={handleTeleport}
@@ -1045,148 +1045,162 @@ export default function RacingGame() {
         </>
       )}
 
-      {/* Cinematic Letterbox Film Bars */}
-      {(isCinematicLetterbox || isShowcaseMode) && (
-        <>
-          <div className="absolute top-0 left-0 right-0 h-12 sm:h-14 bg-slate-950/95 backdrop-blur-md z-[55] border-b border-white/10 flex items-center justify-between px-6 transition-all duration-500 animate-fade-in pointer-events-auto">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-400/40 text-xs font-bold">
-                🎬 시네마틱 멍때리기 뷰
-              </span>
-              <span className="text-xs text-slate-300 font-semibold truncate hidden sm:inline">
-                {SHOWCASE_SCENES[showcaseIndex]?.title}
-              </span>
+      {/* ── Cinematic Showcase Overlay (全스크린 영화 모드) ──────────────── */}
+      {isShowcaseMode && (
+        <div className="absolute inset-0 z-[60] pointer-events-none select-none">
+
+          {/* Film grain overlay */}
+          <div
+            className="absolute inset-0 opacity-[0.04] z-[1]"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
+              backgroundSize: '128px 128px',
+            }}
+          />
+
+          {/* Scene transition: fade-to-black overlay */}
+          <div
+            className="absolute inset-0 z-[50] bg-black pointer-events-none"
+            style={{
+              opacity: showcaseFade ? 1 : 0,
+              transition: showcaseFade ? 'opacity 0.7s ease-in' : 'opacity 0.9s ease-out',
+            }}
+          />
+
+          {/* Top letterbox bar — fades in on hover via CSS group */}
+          <div
+            className="absolute top-0 left-0 right-0 z-[10] flex flex-col pointer-events-auto"
+            style={{ background: 'linear-gradient(to bottom, rgba(2,4,12,0.96) 60%, transparent)' }}
+          >
+            {/* Top black bar */}
+            <div className="h-14 sm:h-16 flex items-center justify-between px-6 sm:px-10">
+              {/* Left: badge + scene title */}
+              <div className="flex items-center gap-3">
+                <span
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black tracking-widest uppercase"
+                  style={{
+                    background: 'rgba(245,158,11,0.15)',
+                    border: '1px solid rgba(245,158,11,0.4)',
+                    color: '#fcd34d',
+                    letterSpacing: '0.12em',
+                  }}
+                >
+                  🎬 CINEMATIC DRIVE
+                </span>
+                <span className="text-[13px] font-semibold text-white/80 hidden sm:inline truncate max-w-xs">
+                  {SHOWCASE_SCENES[showcaseIndex]?.locationLabel}
+                </span>
+              </div>
+
+              {/* Right: timer + minimal controls (always visible) */}
+              <div className="flex items-center gap-2">
+                {/* Countdown dot ring */}
+                <div className="relative flex items-center justify-center w-9 h-9">
+                  <svg className="absolute inset-0 -rotate-90" viewBox="0 0 36 36" width="36" height="36">
+                    <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="2.5" />
+                    <circle
+                      cx="18" cy="18" r="15" fill="none"
+                      stroke="#fbbf24" strokeWidth="2.5" strokeLinecap="round"
+                      strokeDasharray={`${(showcaseTimer / 60) * 94.2} 94.2`}
+                      style={{ transition: 'stroke-dasharray 0.8s linear' }}
+                    />
+                  </svg>
+                  <span className="text-[10px] font-black text-amber-300">{showcasePaused ? '⏸' : showcaseTimer}</span>
+                </div>
+
+                <button
+                  onClick={() => setShowcasePaused((p) => !p)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all hover:scale-110"
+                  style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}
+                  title={showcasePaused ? '재개' : '일시정지'}
+                >
+                  {showcasePaused ? '▶' : '⏸'}
+                </button>
+
+                <button
+                  onClick={handlePrevShowcase}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all hover:scale-110"
+                  style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}
+                  title="이전 장소"
+                >
+                  ⏮
+                </button>
+
+                <button
+                  onClick={handleNextShowcase}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all hover:scale-110"
+                  style={{ background: 'rgba(251,191,36,0.25)', border: '1px solid rgba(251,191,36,0.5)' }}
+                  title="다음 장소"
+                >
+                  ⏭
+                </button>
+
+                {/* EXIT — always visible, prominent */}
+                <button
+                  onClick={() => {
+                    setIsShowcaseMode(false);
+                    setIsCinematicLetterbox(false);
+                    setIsTimeAutoFlow(false);
+                  }}
+                  className="ml-2 px-4 py-1.5 rounded-full text-xs font-black tracking-wider transition-all hover:scale-105 active:scale-95"
+                  style={{
+                    background: 'rgba(239,68,68,0.18)',
+                    border: '1px solid rgba(239,68,68,0.45)',
+                    color: '#fca5a5',
+                  }}
+                >
+                  ✕ 나가기
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => setIsCinematicLetterbox(false)}
-              className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded bg-white/10 transition-colors"
-            >
-              ✕ 레터박스 닫기
-            </button>
           </div>
 
-          <div className="absolute bottom-0 left-0 right-0 h-12 sm:h-14 bg-slate-950/95 backdrop-blur-md z-[55] border-t border-white/10 flex items-center justify-between px-6 transition-all duration-500 animate-fade-in pointer-events-none" />
-        </>
-      )}
-
-      {/* Showcase Mode Ambient Control Banner */}
-      {isShowcaseMode && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center gap-2 animate-fade-in pointer-events-auto max-w-[calc(100vw-2rem)]">
-          <div className="rounded-2xl bg-slate-900/95 backdrop-blur-2xl border-2 border-amber-400/50 shadow-2xl p-3 flex flex-col sm:flex-row items-center gap-3">
-            {/* Location Title & Info */}
-            <div className="flex items-center gap-3 pr-2 sm:border-r border-white/15">
-              <Film className="h-5 w-5 text-amber-400 animate-pulse shrink-0" />
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-black text-amber-300 tracking-wider uppercase">
-                    ☕ 멍때리기 구경하기 ({showcaseIndex + 1}/{SHOWCASE_SCENES.length})
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/30 font-bold">
-                    {showcasePaused ? '⏸️ 일시정지' : `다음 장소 ${showcaseTimer}초`}
-                  </span>
-                </div>
-                <span className="text-xs sm:text-sm font-bold text-white tracking-wide truncate max-w-[220px] sm:max-w-xs">
+          {/* Bottom letterbox bar with scene info */}
+          <div
+            className="absolute bottom-0 left-0 right-0 z-[10] pointer-events-auto"
+            style={{ background: 'linear-gradient(to top, rgba(2,4,12,0.96) 60%, transparent)' }}
+          >
+            <div className="h-16 sm:h-20 flex items-end justify-between px-6 sm:px-10 pb-4 sm:pb-5">
+              {/* Scene title card */}
+              <div className="flex flex-col gap-0.5">
+                <span
+                  className="text-[10px] font-black tracking-[0.2em] uppercase"
+                  style={{ color: 'rgba(251,191,36,0.7)' }}
+                >
+                  SCENE {showcaseIndex + 1} / {SHOWCASE_SCENES.length}
+                </span>
+                <span className="text-base sm:text-xl font-black text-white leading-tight truncate max-w-[280px] sm:max-w-lg">
                   {SHOWCASE_SCENES[showcaseIndex]?.title}
+                </span>
+                <span className="text-[11px] text-white/50 hidden sm:block">
+                  {SHOWCASE_SCENES[showcaseIndex]?.description}
+                </span>
+              </div>
+
+              {/* Speed display */}
+              <div className="flex flex-col items-end gap-0.5">
+                <span className="text-3xl sm:text-4xl font-black text-white tabular-nums" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {Math.round(car.speed)}
+                </span>
+                <span className="text-[10px] font-bold tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  KM/H
                 </span>
               </div>
             </div>
-
-            {/* Navigation & Speed Controls */}
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={handlePrevShowcase}
-                className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-amber-200 text-xs font-bold transition-all active:scale-95 shrink-0"
-                title="이전 장소로 이동"
-              >
-                ⏮️ 이전
-              </button>
-
-              <button
-                onClick={handleNextShowcase}
-                className="px-3 py-1.5 rounded-xl bg-amber-500/30 hover:bg-amber-500/40 border border-amber-400/50 text-amber-200 text-xs font-bold transition-all flex items-center gap-1 shadow-lg shadow-amber-950/40 active:scale-95 shrink-0 animate-pulse"
-                title="다음 장소로 이동"
-              >
-                ⏭️ 다음 장소
-              </button>
-
-              <button
-                onClick={() => setShowcasePaused((prev) => !prev)}
-                className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-slate-200 text-xs font-bold transition-all active:scale-95 shrink-0"
-                title="자동 순환 일시정지/재개"
-              >
-                {showcasePaused ? '▶️ 재개' : '⏸️ 정지'}
-              </button>
-
-              {/* Speed Preset Switcher */}
-              <div className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-xl border border-white/10">
-                <button
-                  onClick={() => setShowcaseSpeed(35)}
-                  className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
-                    showcaseSpeed === 35
-                      ? 'bg-amber-400 text-slate-950 font-black shadow'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                  title="🐌 차분히 (35km/h 스무스 관람)"
-                >
-                  🐌 35
-                </button>
-                <button
-                  onClick={() => setShowcaseSpeed(60)}
-                  className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
-                    showcaseSpeed === 60
-                      ? 'bg-amber-400 text-slate-950 font-black shadow'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                  title="🚗 보통 (60km/h)"
-                >
-                  🚗 60
-                </button>
-                <button
-                  onClick={() => setShowcaseSpeed(95)}
-                  className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
-                    showcaseSpeed === 95
-                      ? 'bg-amber-400 text-slate-950 font-black shadow'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                  title="🏎️ 빠르게 (95km/h)"
-                >
-                  🏎️ 95
-                </button>
-              </div>
-
-              {/* Auto Camera Cycle Toggle */}
-              <button
-                onClick={() => setAutoCameraSwitch((prev) => !prev)}
-                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                  autoCameraSwitch
-                    ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
-                    : 'bg-white/5 text-slate-400 border-white/10'
-                }`}
-                title="시점 14초마다 자동 전환"
-              >
-                🎥 시점자동 {autoCameraSwitch ? 'ON' : 'OFF'}
-              </button>
-
-              {/* Stop Showcase */}
-              <button
-                onClick={() => {
-                  setIsShowcaseMode(false);
-                  setIsCinematicLetterbox(false);
-                }}
-                className="px-2.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/40 text-rose-200 text-xs font-bold transition-all active:scale-95 shrink-0"
-              >
-                🛑 직접 운전
-              </button>
-            </div>
           </div>
-          <p className="text-[10px] font-medium text-amber-200/80 bg-slate-950/80 px-3 py-0.5 rounded-full border border-amber-400/20 drop-shadow text-center">
-            ☕ 편안하게 멍때리며 관람하는 모드입니다. 자동차 시점, 날씨, 시간, 장소가 차분하게 자동 연출됩니다.
-          </p>
+
+          {/* Left/right vignette edges */}
+          <div
+            className="absolute inset-0 z-[2] pointer-events-none"
+            style={{
+              background: 'radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%)',
+            }}
+          />
         </div>
       )}
 
-      {/* Mobile touch controls */}
-      {active && (
+      {/* Mobile touch controls (only in manual mode) */}
+      {active && !isShowcaseMode && (
         <MobileControls keysRef={keysRef} />
       )}
     </div>
