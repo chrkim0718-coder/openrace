@@ -3,7 +3,25 @@ import { Gauge, MapPin, Sparkles, Building2, Shield, Mountain, Tag, Camera, Clou
 import type { CarState, WeatherMode } from '@/types/game';
 import { getTimeOfDayAtmosphere } from '@/utils/timeOfDay';
 
-export type CameraMode = 'chase' | 'topdown' | 'sky' | 'bonnet' | 'cinematic';
+export type CameraMode = 'chase' | 'topdown' | 'sky' | 'bonnet' | 'cinematic' | 'gta';
+
+export interface GTAShot {
+  id: string;
+  label: string;
+  pitch: number;
+  zoom: number;
+  offsetAngle: number;
+  isOrbit?: boolean;
+}
+
+export const GTA_SHOT_PRESETS: GTAShot[] = [
+  { id: 'low_chase', label: '🏎️ LOW REAR CHASE (초저고도 3인칭 추적)', pitch: 74, zoom: 17.0, offsetAngle: 0 },
+  { id: 'side_profile', label: '🎥 SIDE TRACKING (측면 패러렐 프로필 샷)', pitch: 72, zoom: 17.2, offsetAngle: 85 },
+  { id: 'front_bumper', label: '🎬 FRONT BUMPER CAM (전방 보닛 정면 샷)', pitch: 75, zoom: 17.6, offsetAngle: 180 },
+  { id: 'drone_overhead', label: '🚁 OVERHEAD DRONE (상공 초근접 드론 샷)', pitch: 42, zoom: 15.4, offsetAngle: 35 },
+  { id: 'wide_panoramic', label: '🌆 WIDE SKY PANORAMIC (와이드 파노라마 뷰)', pitch: 35, zoom: 14.8, offsetAngle: 135 },
+  { id: 'slow_orbit', label: '💫 360° ORBIT CAM (360도 영화같은 회전 샷)', pitch: 60, zoom: 16.2, offsetAngle: 0, isOrbit: true },
+];
 
 export const CAMERA_CONFIG: Record<
   CameraMode,
@@ -14,9 +32,10 @@ export const CAMERA_CONFIG: Record<
   sky: { pitch: 35, zoom: 15.2, label: '스카이뷰' },
   bonnet: { pitch: 73, zoom: 17.5, label: '1인칭 보닛' },
   cinematic: { pitch: 65, zoom: 16.2, label: '🎬 시네마틱 360°' },
+  gta: { pitch: 68, zoom: 16.6, label: '🎥 GTA 시네마틱 샷' },
 };
 
-export const CAMERA_MODES: CameraMode[] = ['chase', 'topdown', 'sky', 'bonnet', 'cinematic'];
+export const CAMERA_MODES: CameraMode[] = ['chase', 'topdown', 'sky', 'bonnet', 'cinematic', 'gta'];
 
 export const TERRAIN_LEVELS = [
   { value: 0, label: '0x (평지)' },

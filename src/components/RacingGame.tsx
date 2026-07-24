@@ -5,6 +5,7 @@ import { useCarPhysics } from '@/hooks/useCarPhysics';
 import type { CollisionData } from '@/hooks/useCarPhysics';
 import SearchPanel from '@/components/SearchPanel';
 import HUD, { CameraMode, CAMERA_CONFIG, CAMERA_MODES } from '@/components/HUD';
+import { createCar3DLayer, setCar3DState } from '@/utils/car3DLayer';
 import RadioPlayer from '@/components/RadioPlayer';
 import {
   fetchAreaData,
@@ -42,6 +43,7 @@ export default function RacingGame() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<HTMLDivElement | null>(null);
+  const car3DLayerRef = useRef<boolean>(false); // track if layer is added
 
   const [active, setActive] = useState(false);
   const [weather, setWeather] = useState<WeatherMode>('day');
@@ -275,39 +277,19 @@ export default function RacingGame() {
         console.warn('Initial buildings fetch failed:', err);
       }
 
-      // Store initial marker
-      const el = document.createElement('div');
-      el.className = 'car-marker';
-      el.innerHTML = `
-        <svg width="36" height="52" viewBox="0 0 36 52" fill="none">
-          <rect x="3" y="1" width="30" height="50" rx="8" fill="#0284c7" stroke="#000000" stroke-width="1.5"/>
-          <rect x="6" y="10" width="24" height="14" rx="4" fill="#38bdf8" opacity="0.9"/>
-          <rect x="6" y="30" width="24" height="12" rx="3" fill="#1e293b"/>
-          <circle cx="9" cy="4" r="2.5" fill="#fef08a"/>
-          <circle cx="27" cy="4" r="2.5" fill="#fef08a"/>
-          <rect x="4" y="16" width="4" height="8" rx="1.5" fill="#1a1a1a"/>
-          <rect x="28" y="16" width="4" height="8" rx="1.5" fill="#1a1a1a"/>
-          <rect x="4" y="40" width="4" height="8" rx="1.5" fill="#1a1a1a"/>
-          <rect x="28" y="40" width="4" height="8" rx="1.5" fill="#1a1a1a"/>
-        </svg>
-      `;
-      const wheelL = el.querySelector('rect:nth-of-type(3)') as SVGRectElement | null;
-      const wheelR = el.querySelector('rect:nth-of-type(4)') as SVGRectElement | null;
-
-      (el as any)._wheelL = wheelL;
-      (el as any)._wheelR = wheelR;
-
-      markerRef.current = el;
-
-      const marker = new maplibregl.Marker({
-        element: el,
-        rotationAlignment: 'map',
-        pitchAlignment: 'map',
-      })
-        .setLngLat([INITIAL.lng, INITIAL.lat])
-        .addTo(map);
-
-      (mapRef.current as any)._marker = marker;
+      // ── Add Three.js 3D car custom layer ──
+      if (!car3DLayerRef.current) {
+        setCar3DState({
+          lat: INITIAL.lat,
+          lng: INITIAL.lng,
+          heading: INITIAL.heading,
+          speed: 0,
+          steerAngle: 0,
+        });
+        const carLayer = createCar3DLayer(map);
+        map.addLayer(carLayer);
+        car3DLayerRef.current = true;
+      }
 
       setReady(true);
     });
@@ -324,28 +306,24 @@ export default function RacingGame() {
     const map = mapRef.current;
     if (!map || !ready) return;
 
-    const marker = (map as any)._marker;
-    if (marker) {
-      marker.setLngLat([car.lng, car.lat]);
-      marker.setRotation(car.heading);
-
-      const el = markerRef.current;
-      if (el) {
-        const wL = (el as any)._wheelL as SVGRectElement | null;
-        const wR = (el as any)._wheelR as SVGRectElement | null;
-        const steerDeg = car.steerAngle * 30;
-        [wL, wR].forEach((w) => {
-          if (w) w.setAttribute('transform', `rotate(${steerDeg} 6 20)`);
-        });
-      }
-    }
+    // ── Push latest car state to Three.js 3D layer (runs every physics tick) ──
+    setCar3DState({
+      lat: car.lat,
+      lng: car.lng,
+      heading: car.heading,
+      speed: car.speed,
+      steerAngle: car.steerAngle,
+    });
 
     const cfg = CAMERA_CONFIG[cameraMode];
     let targetBearing = car.heading;
 
-    if (cameraMode === 'cinematic') {
+    // ── GTA / Cinematic: orbit around car ──
+    if (cameraMode === 'cinematic' || cameraMode === 'gta') {
       const nowSec = performance.now() / 1000;
-      targetBearing = (nowSec * 10) % 360;
+      // Slow orbit for cinematic, faster for GTA
+      const orbitSpeed = cameraMode === 'gta' ? 14 : 8;
+      targetBearing = (car.heading + nowSec * orbitSpeed) % 360;
     }
 
     const curState = cameraStateRef.current;
@@ -353,18 +331,41 @@ export default function RacingGame() {
     if (deltaBearing > 180) deltaBearing -= 360;
     if (deltaBearing < -180) deltaBearing += 360;
 
-    // Smooth Lerp factor (0.04 for showcase/cinematic mode for ultra calm motion, 0.18 for manual driving)
-    const lerpFactor = isShowcaseMode || cameraMode === 'cinematic' ? 0.04 : 0.18;
+    // Lerp factor: very slow for showcase/cinematic, normal for manual driving
+    const lerpFactor = isShowcaseMode || cameraMode === 'cinematic' || cameraMode === 'gta' ? 0.035 : 0.18;
     curState.bearing = (curState.bearing + deltaBearing * lerpFactor + 360) % 360;
     curState.lat += (car.lat - curState.lat) * lerpFactor;
     curState.lng += (car.lng - curState.lng) * lerpFactor;
 
+    // ── Speed-proportional camera shake for driving immersion ──
+    const speedFactor = Math.min(car.speed / 120, 1);
+    const shakeAmt = speedFactor * 0.000012;
+    const shakeNow = performance.now();
+    const shakeLat = Math.sin(shakeNow * 0.037) * shakeAmt;
+    const shakeLng = Math.cos(shakeNow * 0.041) * shakeAmt;
+
+    // ── Dynamic zoom: zoom in at high speed, zoom out when slow ──
+    const speedZoomOffset = speedFactor * -0.5; // zoom out slightly at high speed
+    const targetZoom = cfg.zoom + speedZoomOffset;
+
+    // ── Dynamic pitch: lean down at high speed ──
+    const speedPitchOffset = speedFactor * 3;
+    const targetPitch = Math.min(cfg.pitch + speedPitchOffset, 82);
+
     map.jumpTo({
-      center: [curState.lng, curState.lat],
+      center: [curState.lng + shakeLng, curState.lat + shakeLat],
       bearing: curState.bearing,
-      pitch: cfg.pitch,
-      zoom: cfg.zoom,
+      pitch: targetPitch,
+      zoom: targetZoom,
     });
+
+    // ── Speed motion blur on canvas at high speed ──
+    const canvas = map.getCanvas();
+    if (car.speed > 60) {
+      const blurPx = ((car.speed - 60) / 100) * 1.2;
+      canvas.style.filter = (canvas.style.filter || '').replace(/ blur\([^)]+\)/g, '') +
+        ` blur(${blurPx.toFixed(2)}px)`;
+    }
   }, [car, ready, cameraMode, isShowcaseMode]);
 
   // V key shortcut to cycle camera view mode
