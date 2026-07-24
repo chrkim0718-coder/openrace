@@ -8,6 +8,34 @@ export interface BGMTrack {
 
 export const DRIVING_BGM_PLAYLIST: BGMTrack[] = [
   {
+    id: 'jingle_bells_snow',
+    title: 'Jingle Bells Snow Drive',
+    artist: 'Holiday Festive',
+    genre: '🎄 윈터 캐롤',
+    url: 'https://cdn.pixabay.com/download/audio/2022/11/24/audio_34b39b0368.mp3?filename=jingle-bells-christmas-127733.mp3',
+  },
+  {
+    id: 'merry_christmas_carol',
+    title: 'We Wish You a Merry Christmas',
+    artist: 'Christmas Magic',
+    genre: '🎄 윈터 캐롤',
+    url: 'https://cdn.pixabay.com/download/audio/2022/12/08/audio_6513364fbe.mp3?filename=christmas-magic-129068.mp3',
+  },
+  {
+    id: 'silent_night_lofi',
+    title: 'Silent Night Lo-Fi Carol',
+    artist: 'Winter Chill Hop',
+    genre: '❄️ 캐롤 로파이',
+    url: 'https://cdn.pixabay.com/download/audio/2022/11/28/audio_24e0573981.mp3?filename=lofi-christmas-128224.mp3',
+  },
+  {
+    id: 'winter_wonderland',
+    title: 'Winter Wonderland Orchestra',
+    artist: 'Snowy Orchestra',
+    genre: '🎄 윈터 캐롤',
+    url: 'https://cdn.pixabay.com/download/audio/2022/11/15/audio_b2f9c34a17.mp3?filename=christmas-carol-126861.mp3',
+  },
+  {
     id: 'synthwave_midnight',
     title: 'Midnight Cyberpunk Drive',
     artist: 'Synthwave Freedom',
@@ -42,6 +70,48 @@ export const DRIVING_BGM_PLAYLIST: BGMTrack[] = [
     genre: '🎹 Night City Jazz',
     url: 'https://cdn.pixabay.com/download/audio/2022/11/06/audio_c42f026a79.mp3?filename=night-drive-127116.mp3',
   },
+  {
+    id: 'tropical_beach_pop',
+    title: 'Tropical Beach Highway',
+    artist: 'Summer Breeze',
+    genre: '🌊 Tropical EDM',
+    url: 'https://cdn.pixabay.com/download/audio/2022/08/02/audio_884b9c6302.mp3?filename=summer-chill-pop-117215.mp3',
+  },
+  {
+    id: 'neon_tokyo_drift',
+    title: 'Neon Cyberpunk Drift',
+    artist: 'Future Bass 15',
+    genre: '🏎️ Cyberpunk Beat',
+    url: 'https://cdn.pixabay.com/download/audio/2022/03/10/audio_510d9f481c.mp3?filename=future-bass-15-10023.mp3',
+  },
+  {
+    id: 'space_synth',
+    title: 'Deep Space Synthwave',
+    artist: 'Arcadia Retro',
+    genre: '🌌 Space Synth',
+    url: 'https://cdn.pixabay.com/download/audio/2022/04/27/audio_6a30c5e317.mp3?filename=retro-synthwave-108754.mp3',
+  },
+  {
+    id: 'night_city_sax',
+    title: 'Smooth Night Lounge Sax',
+    artist: 'Urban Jazz Ensemble',
+    genre: '🎷 Urban Jazz',
+    url: 'https://cdn.pixabay.com/download/audio/2022/05/16/audio_db6f7b1548.mp3?filename=jazz-lounge-112544.mp3',
+  },
+  {
+    id: 'sunset_coast_rock',
+    title: 'Sunset Coast Acoustic Rock',
+    artist: 'Pacific Guitars',
+    genre: '🎸 Coast Rock',
+    url: 'https://cdn.pixabay.com/download/audio/2022/01/26/audio_d0c6af3823.mp3?filename=acoustic-guitars-10497.mp3',
+  },
+  {
+    id: 'rainy_day_lofi',
+    title: 'Rainy Day Lo-Fi Beats',
+    artist: 'Midnight Rain',
+    genre: '🌧️ Rainy Lo-Fi',
+    url: 'https://cdn.pixabay.com/download/audio/2022/02/10/audio_fc86ec6211.mp3?filename=lofi-study-112191.mp3',
+  },
 ];
 
 class MusicPlayer {
@@ -62,7 +132,6 @@ class MusicPlayer {
       });
 
       this.audio.addEventListener('error', () => {
-        // Fallback to next track if CDN fails
         console.warn('BGM track error, switching to next track');
         this.nextTrack();
       });
@@ -71,7 +140,9 @@ class MusicPlayer {
 
   public subscribe(listener: () => void) {
     this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
   }
 
   private notify() {
