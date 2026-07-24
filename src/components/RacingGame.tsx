@@ -813,41 +813,115 @@ function MobileControls({
 }: {
   keysRef: React.MutableRefObject<KeysPressed>;
 }) {
-  const press = (key: keyof KeysPressed, val: boolean) => {
-    keysRef.current[key] = val;
-  };
+  const [knobPos, setKnobPos] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const baseRef = useRef<HTMLDivElement>(null);
 
-  const btn = (
-    label: string,
-    key: 'forward' | 'backward' | 'left' | 'right' | 'turbo',
-    extraClass = '',
-  ) => (
-    <button
-      onPointerDown={(e) => {
-        e.preventDefault();
-        press(key, true);
-      }}
-      onPointerUp={() => press(key, false)}
-      onPointerLeave={() => press(key, false)}
-      onPointerCancel={() => press(key, false)}
-      className={`w-14 h-14 rounded-2xl bg-slate-900/80 backdrop-blur-md border border-white/15 text-white text-xl font-bold flex items-center justify-center active:bg-cyan-500/40 active:scale-95 transition-all touch-none select-none ${extraClass}`}
-    >
-      {label}
-    </button>
+  const updateJoystick = useCallback(
+    (clientX: number, clientY: number) => {
+      if (!baseRef.current) return;
+      const rect = baseRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const dx = clientX - centerX;
+      const dy = clientY - centerY;
+      const dist = Math.hypot(dx, dy);
+
+      const maxRadius = 42; // Joystick max knob offset radius
+      const clampedDist = Math.min(dist, maxRadius);
+      const angle = Math.atan2(dy, dx);
+
+      const knobX = Math.cos(angle) * clampedDist;
+      const knobY = Math.sin(angle) * clampedDist;
+
+      setKnobPos({ x: knobX, y: knobY });
+
+      // Normalized values from -1.0 to 1.0
+      const normX = dx / maxRadius;
+      const normY = dy / maxRadius;
+
+      // Deadzone threshold
+      const deadzone = 0.22;
+
+      keysRef.current.left = normX < -deadzone;
+      keysRef.current.right = normX > deadzone;
+      keysRef.current.forward = normY < -deadzone;
+      keysRef.current.backward = normY > deadzone;
+    },
+    [keysRef],
   );
 
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setIsDragging(true);
+    updateJoystick(e.clientX, e.clientY);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    updateJoystick(e.clientX, e.clientY);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    setIsDragging(false);
+    setKnobPos({ x: 0, y: 0 });
+    keysRef.current.forward = false;
+    keysRef.current.backward = false;
+    keysRef.current.left = false;
+    keysRef.current.right = false;
+  };
+
   return (
-    <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-50 flex gap-6 items-end">
-      <div className="grid grid-cols-2 gap-1">
-        {btn('←', 'left')}
-        {btn('→', 'right')}
+    <div className="md:hidden absolute bottom-5 left-4 right-4 z-50 flex items-end justify-between pointer-events-none touch-none select-none">
+      {/* 360° Virtual Joystick */}
+      <div className="pointer-events-auto flex flex-col items-center">
+        <div
+          ref={baseRef}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          className="relative w-32 h-32 rounded-full bg-slate-950/85 backdrop-blur-xl border-2 border-cyan-400/50 shadow-2xl shadow-cyan-950/50 flex items-center justify-center touch-none cursor-grab active:cursor-grabbing"
+        >
+          {/* Inner ring track guide */}
+          <div className="absolute inset-2 rounded-full border border-dashed border-cyan-500/25 pointer-events-none" />
+          <div className="absolute w-full h-[1px] bg-cyan-500/15 pointer-events-none" />
+          <div className="absolute h-full w-[1px] bg-cyan-500/15 pointer-events-none" />
+
+          {/* Thumb Knob */}
+          <div
+            className={`w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-600 shadow-lg shadow-cyan-500/40 border-2 border-white/70 flex items-center justify-center transition-transform ${
+              isDragging ? 'scale-105 shadow-cyan-400/60' : 'duration-150'
+            }`}
+            style={{
+              transform: `translate(${knobPos.x}px, ${knobPos.y}px)`,
+            }}
+          >
+            <div className="w-5 h-5 rounded-full bg-white/30 border border-white/50" />
+          </div>
+        </div>
+        <span className="text-[10px] text-cyan-300/80 mt-1 font-semibold tracking-wider drop-shadow">
+          360° 조이스틱
+        </span>
       </div>
-      <div className="grid grid-cols-2 gap-1">
-        {btn('↑', 'forward')}
-        {btn('↓', 'backward')}
-      </div>
-      <div className="grid grid-cols-1 gap-1">
-        {btn('⚡', 'turbo', 'active:bg-orange-500/40 border-orange-400/30')}
+
+      {/* Turbo Boost Button */}
+      <div className="pointer-events-auto flex items-center pb-2">
+        <button
+          onPointerDown={(e) => {
+            e.preventDefault();
+            keysRef.current.turbo = true;
+          }}
+          onPointerUp={() => (keysRef.current.turbo = false)}
+          onPointerLeave={() => (keysRef.current.turbo = false)}
+          onPointerCancel={() => (keysRef.current.turbo = false)}
+          className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500/90 to-amber-600/90 backdrop-blur-xl border border-orange-400/60 text-white font-black text-xs flex flex-col items-center justify-center shadow-xl shadow-orange-500/40 active:scale-95 transition-all touch-none select-none"
+        >
+          <span className="text-xl leading-none mb-0.5">⚡</span>
+          <span>TURBO</span>
+        </button>
       </div>
     </div>
   );
