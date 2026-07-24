@@ -17,6 +17,7 @@ import type { WeatherMode, KeysPressed, ScenicCourse } from '@/types/game';
 import { audioEngine } from '@/utils/audioEngine';
 import { fetchLiveWeather } from '@/utils/liveWeather';
 import { SCENIC_COURSES } from '@/data/scenicDrives';
+import { getTimeOfDayAtmosphere } from '@/utils/timeOfDay';
 
 const INITIAL = { lat: 35.1587, lng: 129.1604, heading: 0 }; // Busan Haeundae Beach
 
@@ -375,19 +376,49 @@ export default function RacingGame() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [active]);
 
-  // weather overlay
-  const applyWeather = useCallback((w: WeatherMode) => {
-    const map = mapRef.current;
-    if (!map) return;
-    const canvas = map.getCanvas();
-    canvas.style.filter = WEATHER_FILTERS[w];
-    const container = map.getContainer();
-    container.style.setProperty('--weather-overlay', WEATHER_OVERLAY[w]);
-  }, []);
+  const [timeInMinutes, setTimeInMinutes] = useState<number>(720); // Default 12:00 PM
+  const [isTimeAutoFlow, setIsTimeAutoFlow] = useState<boolean>(false);
 
+  // Auto-advance time cycle when isTimeAutoFlow is enabled
   useEffect(() => {
-    applyWeather(weather);
-  }, [weather, applyWeather, ready]);
+    if (!isTimeAutoFlow) return;
+    const interval = setInterval(() => {
+      setTimeInMinutes((prev) => (prev + 1) % 1440);
+    }, 500);
+    return () => clearInterval(interval);
+  }, [isTimeAutoFlow]);
+
+  // Apply weather and 24-hour time of day atmosphere
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const atmos = getTimeOfDayAtmosphere(timeInMinutes);
+
+    const canvas = map.getCanvas();
+    if (weather === 'day' || weather === 'night') {
+      canvas.style.filter = atmos.canvasFilter;
+    } else {
+      canvas.style.filter = WEATHER_FILTERS[weather];
+    }
+
+    const container = map.getContainer();
+    container.style.setProperty(
+      '--weather-overlay',
+      weather === 'day' || weather === 'night' ? atmos.overlayColor : WEATHER_OVERLAY[weather],
+    );
+
+    try {
+      if (typeof (map as any).setFog === 'function') {
+        (map as any).setFog({
+          range: atmos.fogRange,
+          color: atmos.fogColor,
+          'horizon-blend': 0.1,
+        });
+      }
+    } catch (e) {
+      console.warn('setFog error:', e);
+    }
+  }, [timeInMinutes, weather, ready]);
 
   // toggle 3d-buildings and outlines visibility
   useEffect(() => {
@@ -837,8 +868,12 @@ export default function RacingGame() {
             terrainScale={terrainScale}
             cameraMode={cameraMode}
             isLiveWeather={isLiveWeather}
+            timeInMinutes={timeInMinutes}
+            isTimeAutoFlow={isTimeAutoFlow}
             isMuted={isMuted}
             liveWeatherDesc={liveWeatherDesc}
+            onTimeChange={setTimeInMinutes}
+            onToggleTimeAutoFlow={() => setIsTimeAutoFlow((prev) => !prev)}
             onWeatherChange={setWeather}
             onToggleBuildings={setShowBuildings}
             onToggleCollision={setEnableCollision}
