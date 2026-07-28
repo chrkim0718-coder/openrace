@@ -295,6 +295,7 @@ export function useCarPhysics(
           break;
         case 'ArrowDown':
         case 'KeyS':
+        case 'Space':
           keysRef.current.backward = true;
           e.preventDefault();
           break;
@@ -323,6 +324,7 @@ export function useCarPhysics(
           break;
         case 'ArrowDown':
         case 'KeyS':
+        case 'Space':
           keysRef.current.backward = false;
           break;
         case 'ArrowLeft':

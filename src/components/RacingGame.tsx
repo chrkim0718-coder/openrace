@@ -277,67 +277,17 @@ export default function RacingGame() {
         console.warn('Initial buildings fetch failed:', err);
       }
 
-      // ── Premium SVG car marker ──
+      // ── Translucent Center Crosshair Marker (Car marker completely removed) ──
       const el = document.createElement('div');
-      el.className = 'car-marker';
-      el.style.cssText = 'position:relative; width:40px; height:70px; pointer-events:none; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.7));';
+      el.className = 'flight-crosshair-marker';
+      el.style.cssText = 'position:relative; width:16px; height:16px; pointer-events:none; display:flex; align-items:center; justify-content:center; opacity:0.4; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));';
       el.innerHTML = `
-        <svg width="40" height="70" viewBox="0 0 40 70" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Car shadow -->
-          <ellipse cx="20" cy="65" rx="14" ry="4" fill="rgba(0,0,0,0.35)"/>
-          <!-- Rear bumper -->
-          <rect x="8" y="56" width="24" height="5" rx="2.5" fill="#0f172a"/>
-          <!-- Main body -->
-          <rect x="5" y="14" width="30" height="44" rx="7" fill="#1d4ed8"/>
-          <!-- Body highlight -->
-          <rect x="7" y="16" width="26" height="40" rx="6" fill="#2563eb"/>
-          <!-- Roof / cabin -->
-          <rect x="9" y="22" width="22" height="22" rx="5" fill="#1e40af"/>
-          <!-- Windshield front -->
-          <rect x="10" y="17" width="20" height="12" rx="3" fill="#7dd3fc" opacity="0.75"/>
-          <!-- Windshield specular -->
-          <rect x="11" y="18" width="9" height="3" rx="1.5" fill="white" opacity="0.3"/>
-          <!-- Rear window -->
-          <rect x="10" y="41" width="20" height="8" rx="3" fill="#38bdf8" opacity="0.5"/>
-          <!-- Hood line -->
-          <line x1="12" y1="28" x2="28" y2="28" stroke="#1e40af" stroke-width="0.8" opacity="0.6"/>
-          <!-- Front bumper -->
-          <rect x="8" y="9" width="24" height="6" rx="3" fill="#0f172a"/>
-          <!-- Grille -->
-          <rect x="12" y="10" width="16" height="3" rx="1.5" fill="#374151"/>
-          <!-- Front headlights -->
-          <rect x="6" y="9" width="7" height="4" rx="2" fill="#fef3c7" opacity="0.95"/>
-          <rect x="27" y="9" width="7" height="4" rx="2" fill="#fef3c7" opacity="0.95"/>
-          <!-- DRL strips -->
-          <rect x="7" y="10" width="5" height="1.5" rx="0.75" fill="white" opacity="0.8"/>
-          <rect x="28" y="10" width="5" height="1.5" rx="0.75" fill="white" opacity="0.8"/>
-          <!-- Taillights -->
-          <rect x="6" y="57" width="7" height="4" rx="2" fill="#ef4444" opacity="0.9"/>
-          <rect x="27" y="57" width="7" height="4" rx="2" fill="#ef4444" opacity="0.9"/>
-          <!-- Side trim left -->
-          <rect x="5" y="32" width="2" height="12" rx="1" fill="#1e3a8a"/>
-          <!-- Side trim right -->
-          <rect x="33" y="32" width="2" height="12" rx="1" fill="#1e3a8a"/>
-          <!-- Front wheels (steerable) -->
-          <g id="wheel-fl">
-            <rect x="1" y="16" width="6" height="12" rx="2.5" fill="#111827"/>
-            <rect x="2.5" y="17.5" width="3" height="9" rx="1.5" fill="#374151"/>
-            <circle cx="4" cy="22" r="1.5" fill="#9ca3af"/>
-          </g>
-          <g id="wheel-fr">
-            <rect x="33" y="16" width="6" height="12" rx="2.5" fill="#111827"/>
-            <rect x="34.5" y="17.5" width="3" height="9" rx="1.5" fill="#374151"/>
-            <circle cx="36" cy="22" r="1.5" fill="#9ca3af"/>
-          </g>
-          <!-- Rear wheels -->
-          <rect x="1" y="44" width="6" height="12" rx="2.5" fill="#111827"/>
-          <rect x="2.5" y="45.5" width="3" height="9" rx="1.5" fill="#374151"/>
-          <circle cx="4" cy="50" r="1.5" fill="#9ca3af"/>
-          <rect x="33" y="44" width="6" height="12" rx="2.5" fill="#111827"/>
-          <rect x="34.5" y="45.5" width="3" height="9" rx="1.5" fill="#374151"/>
-          <circle cx="36" cy="50" r="1.5" fill="#9ca3af"/>
-          <!-- Roof sheen -->
-          <ellipse cx="20" cy="29" rx="7" ry="4" fill="white" opacity="0.06"/>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="8" r="3" stroke="white" stroke-width="1" opacity="0.8"/>
+          <line x1="8" y1="0" x2="8" y2="5" stroke="white" stroke-width="1" opacity="0.8"/>
+          <line x1="8" y1="11" x2="8" y2="16" stroke="white" stroke-width="1" opacity="0.8"/>
+          <line x1="0" y1="8" x2="5" y2="8" stroke="white" stroke-width="1" opacity="0.8"/>
+          <line x1="11" y1="8" x2="16" y2="8" stroke="white" stroke-width="1" opacity="0.8"/>
         </svg>
       `;
 
@@ -369,20 +319,11 @@ export default function RacingGame() {
     const map = mapRef.current;
     if (!map || !ready) return;
 
-    // ── Update car HTML/SVG marker location & rotation ──────────────────
+    // ── Update crosshair marker location & rotation ──────────────────
     const marker = (map as any)._marker;
     if (marker) {
       marker.setLngLat([car.lng, car.lat]);
       marker.setRotation(car.heading);
-
-      const el = markerRef.current;
-      if (el) {
-        const wFL = el.querySelector('#wheel-fl') as SVGElement | null;
-        const wFR = el.querySelector('#wheel-fr') as SVGElement | null;
-        const steerDeg = car.steerAngle * 25;
-        if (wFL) wFL.setAttribute('transform', `rotate(${steerDeg} 4 22)`);
-        if (wFR) wFR.setAttribute('transform', `rotate(${steerDeg} 36 22)`);
-      }
     }
 
     const cfg = CAMERA_CONFIG[cameraMode];
@@ -1043,20 +984,18 @@ export default function RacingGame() {
           <div className="text-center max-w-md p-8 rounded-3xl bg-slate-900/90 border border-white/10 shadow-2xl">
             <div className="flex justify-center mb-4">
               <div className="w-16 h-16 rounded-2xl bg-cyan-500/20 border border-cyan-400/30 flex items-center justify-center">
-                <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
-                  <path d="M20 70 L50 30 L80 70 Z" fill="#38bdf8" opacity="0.8" />
-                  <path d="M50 30 L50 70" stroke="#0f172a" strokeWidth="4" strokeDasharray="6 4" />
-                  <circle cx="60" cy="55" r="3" fill="#555" />
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3.5c-.5-.5-2.5 0-4 1.5L13.5 8.5 5.3 6.7c-.5-.1-.9.1-1.2.5l-.6.9c-.3.4-.2 1 .2 1.3L8 12.5l-3.5 3.5-2.1-.7c-.4-.1-.8.1-1 .5l-.3.5c-.2.4-.1.8.2 1.1l3 3c.3.3.7.4 1.1.2l.5-.3c.4-.2.6-.6.5-1l-.7-2.1 3.5-3.5 3.1 4.3c.3.4.9.5 1.3.2l.9-.6c.4-.3.6-.7.5-1.2z"/>
                 </svg>
               </div>
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">
-              OSM 레이싱
+              OpenRaceKorea: Free Flight
             </h1>
             <p className="text-sm text-slate-400 mb-6 leading-relaxed">
-              실제 OpenStreetMap 위에서 달리는 레이싱 게임.
+              실제 OpenStreetMap 기반 지도 위를 자유롭게 비행하세요.
               <br />
-              왼쪽 검색창에서 위치를 검색해 원하는 도시로 순간이동하세요.
+              검색창에서 원하는 도시로 이동하고, 하늘에서 한국을 탐험해보세요.
             </p>
             <button
               onClick={() => setActive(true)}
@@ -1064,9 +1003,10 @@ export default function RacingGame() {
             >
               시작하기
             </button>
-            <p className="mt-4 text-xs text-slate-500">
-              W/A/S/D 또는 방향키로 조작
-            </p>
+            <div className="mt-4 text-xs text-slate-400 space-y-1">
+              <p className="font-semibold text-cyan-300">W/A/S/D 또는 방향키로 비행</p>
+              <p>Shift: 가속 &nbsp;|&nbsp; Space: 감속</p>
+            </div>
           </div>
         </div>
       )}

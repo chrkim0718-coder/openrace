@@ -80,7 +80,7 @@ export const SHOWCASE_SCENES: ShowcaseScene[] = [
   },
   {
     id: 'tokyo_c1_midnight',
-    title: '🏎️ 일본 도쿄 수도고속도로 C1 미드나잇',
+    title: '🌃 일본 도쿄 수도고속도로 C1 미드나잇',
     locationLabel: '일본 도쿄 수도고속도로 (C1 환상선)',
     lat: 35.6586,
     lng: 139.7454,
@@ -91,7 +91,7 @@ export const SHOWCASE_SCENES: ShowcaseScene[] = [
     cameraMode: 'bonnet',
     terrainScale: 1.0,
     bgmTrackId: 'synthwave_viper_real',
-    description: '1인칭 보닛 시점으로 즐기는 도쿄 타워 네온 고속도로 레이스',
+    description: '1인칭 시점으로 즐기는 도쿄 타워 네온 고속도로 미드나잇 비행',
   },
   {
     id: 'nice_cote_dazur',

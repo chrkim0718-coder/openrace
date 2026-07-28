@@ -70,16 +70,10 @@ export default function SearchPanel({
 
   const filteredCourses = SCENIC_COURSES.filter((c) => {
     if (activeTab === 'seoul') {
-      return c.location.includes('서울') || c.name.includes('서울') || c.name.includes('남산') || c.name.includes('반포');
+      return c.location.includes('서울') || c.name.includes('서울');
     }
     if (activeTab === 'nationwide') {
-      return (
-        c.location.includes('대한민국') ||
-        c.location.includes('부산') ||
-        c.location.includes('강원') ||
-        c.location.includes('제주') ||
-        c.location.includes('경주')
-      );
+      return c.location.includes('대한민국') || c.name.includes('대한민국');
     }
     // World tab
     if (selectedTheme === 'all') return true;
@@ -195,10 +189,10 @@ export default function SearchPanel({
               <button
                 onClick={onStartShowcase}
                 className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white font-black text-xs flex items-center justify-center gap-2 shadow-xl shadow-rose-950/50 active:scale-95 transition-all border border-white/30 tracking-wide animate-pulse"
-                title="알아서 멋진 3D 드라이브를 보여드립니다! (아무 키나 터치하면 직접 운전)"
+                title="알아서 멋진 3D 비행을 보여드립니다! (아무 키나 터치하면 직접 비행)"
               >
                 <Film className="h-4 w-4 text-amber-300 animate-bounce" />
-                <span>🎬 구경하기 (자동 드라이브 쇼케이스)</span>
+                <span>🎬 구경하기 (자동 비행 쇼케이스)</span>
               </button>
 
               {/* Random Scenic Pick Button */}
@@ -207,7 +201,7 @@ export default function SearchPanel({
                 className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-purple-600/80 via-indigo-600/80 to-cyan-600/80 hover:from-purple-500 hover:to-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-purple-900/30 active:scale-95 transition-all border border-white/20"
               >
                 <Dices className="h-4 w-4 text-yellow-300 animate-spin-slow" />
-                <span>🎲 오늘의 랜덤 절경 드라이브</span>
+                <span>🎲 오늘의 랜덤 절경 비행</span>
               </button>
 
               {/* Theme filter pills (World tab only) */}

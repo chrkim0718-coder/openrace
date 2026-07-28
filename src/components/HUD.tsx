@@ -15,9 +15,9 @@ export interface GTAShot {
 }
 
 export const GTA_SHOT_PRESETS: GTAShot[] = [
-  { id: 'low_chase', label: '🏎️ LOW REAR CHASE (초저고도 3인칭 추적)', pitch: 74, zoom: 17.0, offsetAngle: 0 },
+  { id: 'low_chase', label: '✈️ LOW REAR VIEW (초저고도 3인칭 추적)', pitch: 74, zoom: 17.0, offsetAngle: 0 },
   { id: 'side_profile', label: '🎥 SIDE TRACKING (측면 패러렐 프로필 샷)', pitch: 72, zoom: 17.2, offsetAngle: 85 },
-  { id: 'front_bumper', label: '🎬 FRONT BUMPER CAM (전방 보닛 정면 샷)', pitch: 75, zoom: 17.6, offsetAngle: 180 },
+  { id: 'front_bumper', label: '🎬 FRONT VIEW (전방 정면 샷)', pitch: 75, zoom: 17.6, offsetAngle: 180 },
   { id: 'drone_overhead', label: '🚁 OVERHEAD DRONE (상공 초근접 드론 샷)', pitch: 42, zoom: 15.4, offsetAngle: 35 },
   { id: 'wide_panoramic', label: '🌆 WIDE SKY PANORAMIC (와이드 파노라마 뷰)', pitch: 35, zoom: 14.8, offsetAngle: 135 },
   { id: 'slow_orbit', label: '💫 360° ORBIT CAM (360도 영화같은 회전 샷)', pitch: 60, zoom: 16.2, offsetAngle: 0, isOrbit: true },
@@ -27,10 +27,10 @@ export const CAMERA_CONFIG: Record<
   CameraMode,
   { pitch: number; zoom: number; label: string }
 > = {
-  chase: { pitch: 70, zoom: 16.8, label: '3인칭 드라이빙' },
+  chase: { pitch: 70, zoom: 16.8, label: '3인칭 비행' },
   topdown: { pitch: 58, zoom: 16.2, label: '탑다운 조감도' },
   sky: { pitch: 35, zoom: 15.2, label: '스카이뷰' },
-  bonnet: { pitch: 73, zoom: 17.5, label: '1인칭 보닛' },
+  bonnet: { pitch: 73, zoom: 17.5, label: '1인칭 뷰' },
   cinematic: { pitch: 65, zoom: 16.2, label: '🎬 시네마틱 360°' },
   gta: { pitch: 68, zoom: 16.6, label: '🎥 GTA 시네마틱 샷' },
 };
@@ -200,7 +200,7 @@ export default function HUD({
             </kbd>
           </div>
           <p className="text-[10px] text-slate-400 text-center font-medium">
-            가속/감속/좌/우 · Shift 터보 · <kbd className="bg-white/10 px-1 rounded text-cyan-300">V</kbd> 시점변경
+            W/A/S/D 방향키로 비행 · Shift 가속 · Space 감속 · <kbd className="bg-white/10 px-1 rounded text-cyan-300">V</kbd> 시점
           </p>
         </div>
       </div>
@@ -477,7 +477,7 @@ export default function HUD({
           <button
             onClick={onReset}
             className="rounded-xl bg-slate-900/85 backdrop-blur-xl border border-white/10 shadow-xl px-3 py-2 text-xs text-slate-300 hover:text-white hover:bg-white/5 transition-all flex items-center gap-1.5 font-medium"
-            title="차량을 도로로 복귀"
+            title="현재 위치 리셋"
           >
             <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
             리셋
